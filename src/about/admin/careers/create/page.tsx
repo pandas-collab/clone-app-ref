@@ -1,155 +1,120 @@
 'use client'
 
-import React, { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 
-interface CareerFormData {
+interface NewCareer {
   title: string
   department: string
   location: string
   type: string
-  experience: string
-  salary: string
   description: string
-  responsibilities: string[]
   requirements: string[]
+  responsibilities: string[]
+  salary: string
   benefits: string[]
-  status: 'active' | 'inactive' | 'draft'
+  isActive: boolean
 }
 
 export default function CreateCareerPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [formData, setFormData] = useState<CareerFormData>({
+  const [error, setError] = useState('')
+
+  const [career, setCareer] = useState<NewCareer>({
     title: '',
     department: '',
     location: '',
     type: 'Full-time',
-    experience: 'Mid Level',
-    salary: '',
     description: '',
-    responsibilities: [''],
-    requirements: [''],
-    benefits: [''],
-    status: 'draft'
+    requirements: [],
+    responsibilities: [],
+    salary: '',
+    benefits: [],
+    isActive: true
   })
 
-  React.useEffect(() => {
-    if (status === 'unauthenticated') {
+  useEffect(() => {
+    if (status === 'loading') return
+
+    if (!session || session.user?.role !== 'admin') {
       router.push('/admin/login')
+      return
     }
-  }, [status, router])
+  }, [session, status, router])
 
-  const handleInputChange = (field: keyof CareerFormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
-
-  const updateField = (field: keyof CareerFormData, value: any) => {
-    setFormData({ ...formData, [field]: value })
-  }
-
-  const handleArrayChange = (field: 'responsibilities' | 'requirements' | 'benefits', index: number, value: string) => {
-    const newArray = [...formData[field]]
-    newArray[index] = value
-    setFormData(prev => ({ ...prev, [field]: newArray }))
-  }
-
-  const updateArrayField = (field: 'requirements' | 'benefits', index: number, value: string) => {
-    const newArray = [...formData[field]]
-    newArray[index] = value
-    setFormData({ ...formData, [field]: newArray })
-  }
-
-  const addArrayItem = (field: 'responsibilities' | 'requirements' | 'benefits') => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: [...prev[field], '']
-    }))
-  }
-
-  const removeArrayItem = (field: 'responsibilities' | 'requirements' | 'benefits', index: number) => {
-    if (formData[field].length > 1) {
-      const newArray = formData[field].filter((_, i) => i !== index)
-      setFormData(prev => ({ ...prev, [field]: newArray }))
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setSaving(true)
-    setError(null)
-
+  const handleSave = async () => {
     try {
-      // Validate form
-      if (!formData.title || !formData.department || !formData.description) {
-        throw new Error('Please fill in all required fields')
+      setSaving(true)
+      setError('')
+
+      // Validate required fields
+      if (!career.title || !career.department || !career.location || !career.description) {
+        setError('Please fill in all required fields')
+        return
       }
 
-      // Filter out empty array items
-      const cleanedData = {
-        ...formData,
-        responsibilities: formData.responsibilities.filter(item => item.trim() !== ''),
-        requirements: formData.requirements.filter(item => item.trim() !== ''),
-        benefits: formData.benefits.filter(item => item.trim() !== '')
+      // Mock save operation - replace with actual API call
+      const newCareer = {
+        ...career,
+        id: Date.now().toString(),
+        postedAt: new Date().toISOString()
       }
 
-      // Here you would typically make an API call
-      console.log('Creating career:', cleanedData)
+      console.log('Creating career:', newCareer)
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      alert('Career opportunity created successfully!')
       router.push('/admin/careers')
-
-    } catch (error) {
-      console.error('Error creating career:', error)
-      setError('Failed to create career opportunity. Please try again.')
-      alert('Failed to create career opportunity. Please try again.')
+    } catch (err) {
+      setError('Failed to create career')
+      console.error('Create career error:', err)
     } finally {
-      setLoading(false)
       setSaving(false)
     }
   }
 
+  const updateField = (field: keyof NewCareer, value: any) => {
+    setCareer({ ...career, [field]: value })
+  }
+
+  const updateArrayField = (field: 'requirements' | 'responsibilities' | 'benefits', value: string) => {
+    const items = value.split('\n').filter(item => item.trim())
+    setCareer({ ...career, [field]: items })
+  }
+
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link
-          href="/admin/careers"
-          className="text-blue-600 hover:text-blue-800 mb-4 inline-block"
-        >
-          <- Back to Careers
-        </Link>
-
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Create New Career Opportunity</h1>
-          <p className="text-gray-600 mt-2">Add a new job posting</p>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <button
+            onClick={() => router.push('/admin/careers')}
+            className="text-blue-600 hover:text-blue-800 mb-4"
+          >
+            <- Back to Careers
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900">Create New Job Posting</h1>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-            {error}
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-800">{error}</p>
           </div>
         )}
 
-        <div className="bg-white shadow rounded-lg p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -157,10 +122,9 @@ export default function CreateCareerPage() {
                 </label>
                 <input
                   type="text"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  value={career.title}
+                  onChange={(e) => updateField('title', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -170,10 +134,9 @@ export default function CreateCareerPage() {
                 </label>
                 <input
                   type="text"
-                  value={formData.department}
-                  onChange={(e) => handleInputChange('department', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  value={career.department}
+                  onChange={(e) => updateField('department', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -183,44 +146,25 @@ export default function CreateCareerPage() {
                 </label>
                 <input
                   type="text"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  value={career.location}
+                  onChange={(e) => updateField('location', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Employment Type
+                  Job Type *
                 </label>
                 <select
-                  value={formData.type}
-                  onChange={(e) => handleInputChange('type', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  value={career.type}
+                  onChange={(e) => updateField('type', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="Full-time">Full-time</option>
                   <option value="Part-time">Part-time</option>
                   <option value="Contract">Contract</option>
                   <option value="Internship">Internship</option>
-                  <option value="Intern">Intern</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Experience Level
-                </label>
-                <select
-                  value={formData.experience}
-                  onChange={(e) => handleInputChange('experience', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Entry Level">Entry Level</option>
-                  <option value="Mid Level">Mid Level</option>
-                  <option value="Senior Level">Senior Level</option>
-                  <option value="Executive">Executive</option>
                 </select>
               </div>
 
@@ -230,161 +174,95 @@ export default function CreateCareerPage() {
                 </label>
                 <input
                   type="text"
-                  value={formData.salary}
-                  onChange={(e) => handleInputChange('salary', e.target.value)}
-                  placeholder="e.g., $80,000 - $120,000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={career.salary}
+                  onChange={(e) => updateField('salary', e.target.value)}
+                  placeholder="e.g. $80,000 - $120,000"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={career.isActive}
+                    onChange={(e) => updateField('isActive', e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm font-medium text-gray-700">
+                    Active (visible to applicants)
+                  </span>
                 </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
               </div>
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Job Description *
               </label>
               <textarea
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Describe the role, responsibilities, and what you're looking for..."
-                required
+                value={career.description}
+                onChange={(e) => updateField('description', e.target.value)}
+                rows={4}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            {/* Responsibilities */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                Responsibilities
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Requirements (one per line)
               </label>
-              {formData.responsibilities.map((item, index) => (
-                <div key={index} className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={item}
-                    onChange={(e) => handleArrayChange('responsibilities', index, e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeArrayItem('responsibilities', index)}
-                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md"
-                    disabled={formData.responsibilities.length === 1}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => addArrayItem('responsibilities')}
-                className="text-blue-600 hover:text-blue-800 text-sm"
-              >
-                + Add responsibility
-              </button>
+              <textarea
+                value={career.requirements.join('\n')}
+                onChange={(e) => updateArrayField('requirements', e.target.value)}
+                rows={5}
+                placeholder="3+ years of experience&#10;Proficiency in JavaScript&#10;Experience with React"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
 
-            {/* Requirements */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                Requirements
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Responsibilities (one per line)
               </label>
-              {formData.requirements.map((item, index) => (
-                <div key={index} className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={item}
-                    onChange={(e) => handleArrayChange('requirements', index, e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter requirement"
-                  />
-                  {formData.requirements.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeArrayItem('requirements', index)}
-                      className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => addArrayItem('requirements')}
-                className="text-indigo-600 hover:text-indigo-800 text-sm"
-              >
-                + Add Requirement
-              </button>
+              <textarea
+                value={career.responsibilities.join('\n')}
+                onChange={(e) => updateArrayField('responsibilities', e.target.value)}
+                rows={5}
+                placeholder="Develop web applications&#10;Collaborate with team members&#10;Write clean code"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
 
-            {/* Benefits */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                Benefits
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Benefits (one per line)
               </label>
-              {formData.benefits.map((item, index) => (
-                <div key={index} className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={item}
-                    onChange={(e) => handleArrayChange('benefits', index, e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter benefit"
-                  />
-                  {formData.benefits.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeArrayItem('benefits', index)}
-                      className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => addArrayItem('benefits')}
-                className="text-indigo-600 hover:text-indigo-800 text-sm"
-              >
-                + Add Benefit
-              </button>
+              <textarea
+                value={career.benefits.join('\n')}
+                onChange={(e) => updateArrayField('benefits', e.target.value)}
+                rows={4}
+                placeholder="Health insurance&#10;Flexible hours&#10;Professional development budget"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
 
-            <div className="mt-8 flex justify-end space-x-4">
+            <div className="flex justify-end space-x-4">
               <button
-                type="button"
-                onClick={() => router.back()}
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
+                onClick={() => router.push('/admin/careers')}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
-                type="submit"
-                disabled={loading || saving}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
-                {saving ? 'Creating...' : 'Create Position'}
+                {saving ? 'Creating...' : 'Create Job Posting'}
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>

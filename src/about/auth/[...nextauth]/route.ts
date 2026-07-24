@@ -1,74 +1,80 @@
-import NextAuth, { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
+import NextAuth from 'next-auth'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 
-const authOptions: NextAuthOptions = {
+const handler = NextAuth({
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      name: 'credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-        username: { label: "Username", type: "text" }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null
+        }
+
         try {
-          if (!credentials?.password) {
-            throw new Error("Password required")
+          // For demo purposes - replace with actual database lookup
+          const adminUser = {
+            id: '1',
+            email: 'admin@company.com',
+            password: await bcrypt.hash('admin123', 10), // In real app, this would be stored hashed
+            name: 'Admin User',
+            role: 'admin'
           }
 
-          // Check email-based login (admin@example.com)
-          if (credentials.email === "admin@example.com" && credentials.password === "admin123") {
-            return {
-              id: "1",
-              email: "admin@example.com",
-              name: "Admin User",
-              role: "admin"
+          if (credentials.email === adminUser.email) {
+            const isValid = await bcrypt.compare(credentials.password, adminUser.password)
+
+            if (isValid) {
+              return {
+                id: adminUser.id,
+                email: adminUser.email,
+                name: adminUser.name,
+                role: adminUser.role
+              }
             }
           }
 
-          // Check username-based login (admin)
-          if (credentials.username === "admin" && credentials.password === "admin123") {
-            return {
-              id: "1",
-              name: "Admin User",
-              email: "admin@bourntec.com",
-              role: "admin"
-            }
-          }
-
-          throw new Error("Invalid credentials")
+          return null
         } catch (error) {
-          console.error("Auth error:", error)
+          console.error('Authorization error:', error)
           return null
         }
       }
     })
   ],
-  pages: {
-    signIn: "/admin/login",
-    error: "/admin/login"
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
+  jwt: {
+    secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-key',
+    maxAge: 24 * 60 * 60,
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
+        token.id = user.id
       }
       return token
     },
     async session({ session, token }) {
-      if (session?.user) {
+      if (token) {
+        session.user.id = token.id as string
         session.user.role = token.role as string
-        ;(session.user as any).id = token.sub
       }
       return session
     }
   },
-  session: {
-    strategy: "jwt"
+  pages: {
+    signIn: '/admin/login',
+    error: '/admin/error',
   },
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-key"
-}
+})
 
-const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }

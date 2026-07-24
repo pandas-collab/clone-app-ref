@@ -1,8 +1,8 @@
-// File: /workspace/src/app/api/contact/route.ts
-import * as entry from '../../../../../src/app/api/contact/route.js'
+// File: /workspace/app/api/contact/route.ts
+import * as entry from '../../../../../app/api/contact/route.js'
 import type { NextRequest } from 'next/server.js'
 
-type TEntry = typeof import('../../../../../src/app/api/contact/route.js')
+type TEntry = typeof import('../../../../../app/api/contact/route.js')
 
 // Check that the entry is a valid entry
 checkFields<Diff<{

@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 
 interface Career {
   id: string
@@ -11,91 +10,109 @@ interface Career {
   department: string
   location: string
   type: string
-  experience: string
-  salary: string
   description: string
-  responsibilities: string[]
   requirements: string[]
+  responsibilities: string[]
+  salary: string
   benefits: string[]
-  status: 'active' | 'inactive' | 'draft'
-  postedAt: string
+  isActive: boolean
 }
 
-export default function CareerDetailsPage({ params }: { params: { id: string } }) {
+export default function EditCareerPage({ params }: { params: { id: string } }) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [career, setCareer] = useState<Career | null>(null)
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (status === 'loading') return
+
+    if (!session || session.user?.role !== 'admin') {
       router.push('/admin/login')
       return
     }
 
-    if (status === 'authenticated') {
-      loadCareer()
-    }
-  }, [status, router, params.id])
+    fetchCareer()
+  }, [session, status, router, params.id])
 
-  const loadCareer = async () => {
+  const fetchCareer = async () => {
     try {
       setLoading(true)
 
-      // Mock career data
-      const mockCareers: Record<string, Career> = {
-        "1": {
-          id: "1",
-          title: "Senior Full Stack Developer",
-          department: "Engineering",
-          location: "Remote / San Francisco, CA",
-          type: "Full-time",
-          experience: "Senior Level",
-          salary: "$120,000 - $180,000",
-          description: "We are seeking a talented Senior Full Stack Developer to join our growing engineering team. You will work on cutting-edge web applications and help shape our technical architecture.",
-          responsibilities: [
-            "Develop and maintain web applications using modern frameworks",
-            "Collaborate with cross-functional teams to define and implement features",
-            "Write clean, maintainable, and well-documented code",
-            "Participate in code reviews and technical discussions",
-            "Mentor junior developers and contribute to team growth"
-          ],
-          requirements: [
-            "5+ years of experience in full-stack development",
-            "Proficiency in React, Node.js, and TypeScript",
-            "Experience with databases (PostgreSQL, MongoDB)",
-            "Knowledge of cloud platforms (AWS, GCP, or Azure)",
-            "Strong problem-solving skills and attention to detail"
-          ],
-          benefits: [
-            "Competitive salary and equity package",
-            "Comprehensive health, dental, and vision insurance",
-            "Flexible working hours and remote work options",
-            "Professional development opportunities",
-            "Modern office with great amenities"
-          ],
-          postedAt: "2024-01-10T00:00:00Z",
-          status: "active"
-        }
+      // Mock career data - replace with actual API call
+      const mockCareer: Career = {
+        id: params.id,
+        title: 'Software Developer',
+        department: 'Engineering',
+        location: 'Remote',
+        type: 'Full-time',
+        description: 'We are looking for a talented software developer to join our team.',
+        requirements: [
+          '3+ years of experience in software development',
+          'Proficiency in JavaScript/TypeScript',
+          'Experience with React and Node.js'
+        ],
+        responsibilities: [
+          'Develop and maintain web applications',
+          'Collaborate with cross-functional teams',
+          'Write clean, maintainable code'
+        ],
+        salary: '$80,000 - $120,000',
+        benefits: [
+          'Health insurance',
+          'Flexible working hours',
+          'Professional development budget'
+        ],
+        isActive: true
       }
 
-      const careerData = mockCareers[params.id]
-      if (careerData) {
-        setCareer(careerData)
-      }
-    } catch (error) {
-      console.error('Error loading career:', error)
+      setCareer(mockCareer)
+    } catch (err) {
+      setError('Failed to fetch career')
+      console.error('Fetch career error:', err)
     } finally {
       setLoading(false)
     }
   }
 
+  const handleSave = async () => {
+    if (!career) return
+
+    try {
+      setSaving(true)
+      setError('')
+
+      // Mock save operation - replace with actual API call
+      console.log('Saving career:', career)
+
+      router.push('/admin/careers')
+    } catch (err) {
+      setError('Failed to save career')
+      console.error('Save career error:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const updateField = (field: keyof Career, value: any) => {
+    if (!career) return
+    setCareer({ ...career, [field]: value })
+  }
+
+  const updateArrayField = (field: 'requirements' | 'responsibilities' | 'benefits', value: string) => {
+    if (!career) return
+    const items = value.split('\n').filter(item => item.trim())
+    setCareer({ ...career, [field]: items })
+  }
+
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading career details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading career...</p>
         </div>
       </div>
     )
@@ -103,90 +120,184 @@ export default function CareerDetailsPage({ params }: { params: { id: string } }
 
   if (!career) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Career Not Found</h2>
-          <Link
-            href="/admin/careers"
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block"
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Career Not Found</h2>
+          <button
+            onClick={() => router.push('/admin/careers')}
+            className="text-blue-600 hover:text-blue-800"
           >
-            Back to Careers
-          </Link>
+            <- Back to Careers
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link
-          href="/admin/careers"
-          className="text-blue-600 hover:text-blue-800 mb-4 inline-block"
-        >
-          <- Back to Careers
-        </Link>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <button
+            onClick={() => router.push('/admin/careers')}
+            className="text-blue-600 hover:text-blue-800 mb-4"
+          >
+            <- Back to Careers
+          </button>
+          <h1 className="text-3xl font-bold text-gray-900">Edit Career</h1>
+        </div>
 
-        <div className="bg-white shadow rounded-lg p-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">{career.title}</h1>
-            <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
-              <span>{career.department}</span>
-              <span></span>
-              <span>{career.location}</span>
-              <span></span>
-              <span>{career.type}</span>
-              <span></span>
-              <span>{career.experience}</span>
-            </div>
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-800">{error}</p>
           </div>
+        )}
 
+        <div className="bg-white shadow rounded-lg p-6">
           <div className="space-y-6">
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Job Description</h2>
-              <p className="text-gray-700">{career.description}</p>
-            </section>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Job Title *
+                </label>
+                <input
+                  type="text"
+                  value={career.title}
+                  onChange={(e) => updateField('title', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Responsibilities</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {career.responsibilities.map((responsibility, index) => (
-                  <li key={index}>{responsibility}</li>
-                ))}
-              </ul>
-            </section>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Department *
+                </label>
+                <input
+                  type="text"
+                  value={career.department}
+                  onChange={(e) => updateField('department', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Requirements</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {career.requirements.map((requirement, index) => (
-                  <li key={index}>{requirement}</li>
-                ))}
-              </ul>
-            </section>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Location *
+                </label>
+                <input
+                  type="text"
+                  value={career.location}
+                  onChange={(e) => updateField('location', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Benefits</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {career.benefits.map((benefit, index) => (
-                  <li key={index}>{benefit}</li>
-                ))}
-              </ul>
-            </section>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Job Type *
+                </label>
+                <select
+                  value={career.type}
+                  onChange={(e) => updateField('type', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Internship">Internship</option>
+                </select>
+              </div>
 
-            <div className="flex gap-4 pt-6 border-t">
-              <Link
-                href={`/admin/careers/${career.id}/edit`}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Salary Range
+                </label>
+                <input
+                  type="text"
+                  value={career.salary}
+                  onChange={(e) => updateField('salary', e.target.value)}
+                  placeholder="e.g. $80,000 - $120,000"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={career.isActive}
+                    onChange={(e) => updateField('isActive', e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-sm font-medium text-gray-700">
+                    Active (visible to applicants)
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Job Description *
+              </label>
+              <textarea
+                value={career.description}
+                onChange={(e) => updateField('description', e.target.value)}
+                rows={4}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Requirements (one per line)
+              </label>
+              <textarea
+                value={career.requirements.join('\n')}
+                onChange={(e) => updateArrayField('requirements', e.target.value)}
+                rows={5}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Responsibilities (one per line)
+              </label>
+              <textarea
+                value={career.responsibilities.join('\n')}
+                onChange={(e) => updateArrayField('responsibilities', e.target.value)}
+                rows={5}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Benefits (one per line)
+              </label>
+              <textarea
+                value={career.benefits.join('\n')}
+                onChange={(e) => updateArrayField('benefits', e.target.value)}
+                rows={4}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => router.push('/admin/careers')}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
-                Edit Position
-              </Link>
-              <Link
-                href={`/admin/careers/${career.id}/delete`}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
-                Delete Position
-              </Link>
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>

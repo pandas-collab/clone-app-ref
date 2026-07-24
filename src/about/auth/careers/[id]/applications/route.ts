@@ -1,30 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-interface ApplicationData {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  coverLetter: string
-  resume?: File
-}
-
-interface JobApplication {
-  id: string
-  jobId: string
-  careerId: string
-  name: string
-  email: string
-  phone: string
-  resume: string
-  coverLetter: string
-  status: 'pending' | 'reviewed' | 'accepted' | 'rejected'
-  createdAt: Date
-  updatedAt: Date
-}
-
-// Mock database - replace with your actual database
-let applications: JobApplication[] = []
+import { getServerSession } from 'next-auth'
 
 export async function POST(
   request: NextRequest,
@@ -32,132 +7,50 @@ export async function POST(
 ) {
   try {
     const careerId = params.id
-    const jobId = params.id
+    const body = await request.json()
 
-    if (!careerId || !jobId) {
+    // Validate required fields
+    const { name, email, phone, resume, coverLetter } = body
+
+    if (!name || !email || !phone) {
       return NextResponse.json(
-        { error: "Career ID is required" },
+        { error: 'Missing required fields' },
         { status: 400 }
       )
     }
 
-    // Try to parse as JSON first, fallback to FormData
-    let applicationData: ApplicationData
-    let name: string
-    let email: string
-    let phone: string
-    let resume: string
-    let coverLetter: string
-
-    const contentType = request.headers.get('content-type')
-    
-    if (contentType?.includes('multipart/form-data')) {
-      // Handle FormData (from source branch)
-      const formData = await request.formData()
-
-      applicationData = {
-        firstName: formData.get('firstName') as string,
-        lastName: formData.get('lastName') as string,
-        email: formData.get('email') as string,
-        phone: formData.get('phone') as string,
-        coverLetter: formData.get('coverLetter') as string,
-        resume: formData.get('resume') as File
-      }
-
-      name = `${applicationData.firstName} ${applicationData.lastName}`
-      email = applicationData.email
-      phone = applicationData.phone || ''
-      resume = applicationData.resume ? 'resume_uploaded' : ''
-      coverLetter = applicationData.coverLetter || ''
-
-      // Validate required fields
-      const requiredFields = ['firstName', 'lastName', 'email', 'coverLetter']
-      for (const field of requiredFields) {
-        if (!applicationData[field as keyof ApplicationData]) {
-          return NextResponse.json(
-            { error: `${field} is required` },
-            { status: 400 }
-          )
-        }
-      }
-
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(applicationData.email)) {
-        return NextResponse.json(
-          { error: "Invalid email format" },
-          { status: 400 }
-        )
-      }
-    } else {
-      // Handle JSON (from integration branch)
-      const body = await request.json()
-      name = body.name
-      email = body.email
-      phone = body.phone || ''
-      resume = body.resume || ''
-      coverLetter = body.coverLetter || ''
-
-      // Validation
-      if (!name || !email) {
-        return NextResponse.json(
-          { error: 'Name and email are required' },
-          { status: 400 }
-        )
-      }
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
     }
 
-    // Create new application using integration branch structure
-    const newApplication: JobApplication = {
+    // Mock application creation - replace with database logic
+    const application = {
       id: Date.now().toString(),
-      jobId,
       careerId,
       name,
       email,
       phone,
-      resume,
-      coverLetter,
+      resume: resume || '',
+      coverLetter: coverLetter || '',
       status: 'pending',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      submittedAt: new Date().toISOString(),
     }
-
-    applications.push(newApplication)
-
-    // Here you would typically save to database
-    console.log('New application received:', {
-      careerId,
-      applicant: name,
-      email: email,
-      timestamp: new Date().toISOString()
-    })
-
-    // Generate application ID for source branch compatibility
-    const applicationId = `app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     return NextResponse.json({
       success: true,
-      message: "Application submitted successfully",
-      applicationId,
-      careerId,
-      application: {
-        id: newApplication.id,
-        careerId: newApplication.careerId,
-        name: newApplication.name,
-        email: newApplication.email,
-        resume: newApplication.resume,
-        coverLetter: newApplication.coverLetter,
-        status: newApplication.status,
-        createdAt: newApplication.createdAt.toISOString(),
-        updatedAt: newApplication.updatedAt.toISOString()
-      },
-      data: newApplication
-    }, { status: 201 })
+      message: 'Application submitted successfully',
+      application
+    })
 
   } catch (error) {
     console.error('Application submission error:', error)
     return NextResponse.json(
-      { error: "Failed to submit application" },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
@@ -168,65 +61,36 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const careerId = params.id
-    const jobId = params.id
+    const session = await getServerSession()
 
-    if (!careerId || !jobId) {
+    if (!session) {
       return NextResponse.json(
-        { error: 'Career ID is required' },
-        { status: 400 }
+        { error: 'Unauthorized' },
+        { status: 401 }
       )
     }
 
-    // Filter applications for this job
-    const jobApplications = applications.filter(app => app.jobId === jobId || app.careerId === careerId)
+    const careerId = params.id
 
-    // Mock applications data for integration branch compatibility
-    const mockApplicationsIntegration = [
+    // Mock applications data - replace with database query
+    const applications = [
       {
         id: '1',
         careerId,
         name: 'John Doe',
         email: 'john@example.com',
+        phone: '+1234567890',
         status: 'pending',
-        createdAt: new Date().toISOString()
+        submittedAt: '2024-01-15T10:30:00Z'
       }
     ]
 
-    // Mock applications data for source branch compatibility
-    const mockApplicationsSource = [
-      {
-        id: "app_001",
-        firstName: "John",
-        lastName: "Doe",
-        email: "john@example.com",
-        phone: "(555) 123-4567",
-        appliedAt: "2024-01-15T10:30:00Z",
-        status: "pending"
-      },
-      {
-        id: "app_002",
-        firstName: "Jane",
-        lastName: "Smith",
-        email: "jane@example.com",
-        phone: "(555) 987-6543",
-        appliedAt: "2024-01-14T14:20:00Z",
-        status: "reviewed"
-      }
-    ]
-
-    return NextResponse.json({
-      success: true,
-      applications: [...mockApplicationsIntegration, ...mockApplicationsSource],
-      careerId,
-      data: jobApplications,
-      count: jobApplications.length
-    })
+    return NextResponse.json({ applications })
 
   } catch (error) {
-    console.error('Error fetching applications:', error)
+    console.error('Get applications error:', error)
     return NextResponse.json(
-      { error: "Failed to fetch applications" },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
