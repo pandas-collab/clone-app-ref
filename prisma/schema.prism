@@ -1,0 +1,259 @@
+// This is the Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String
+  content     String?
+  icon        String?
+  image       String?
+  featured    Boolean  @default(false)
+  published   Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  portfolioItems Portfolio[]
+
+  @@map("services")
+}
+
+model Portfolio {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String
+  content     String?
+  image       String?
+  gallery     String[] @default([])
+  clientName  String?
+  projectUrl  String?
+  technologies String[] @default([])
+  featured    Boolean  @default(false)
+  published   Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@map("portfolio")
+}
+
+model Career {
+  id           String   @id @default(cuid())
+  title        String
+  slug         String   @unique
+  description  String
+  content      String?
+  department   String
+  location     String
+  employmentType String
+  salaryRange  String?
+  requirements String[] @default([])
+  benefits     String[] @default([])
+  published    Boolean  @default(false)
+  featured     Boolean  @default(false)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  applications JobApplication[]
+
+  @@map("careers")
+}
+
+model JobApplication {
+  id          String            @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String
+  phone       String?
+  coverLetter String?
+  resume      String?
+  portfolio   String?
+  status      ApplicationStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relationships
+  careerId String
+  career   Career @relation(fields: [careerId], references: [id], onDelete: Cascade)
+
+  @@map("job_applications")
+}
+
+model Lead {
+  id        String     @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  company   String?
+  message   String
+  source    String?
+  status    LeadStatus @default(NEW)
+  priority  Priority   @default(MEDIUM)
+  notes     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("leads")
+}
+
+model NewsArticle {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String?
+  content     String
+  image       String?
+  author      String
+  tags        String[] @default([])
+  published   Boolean  @default(false)
+  featured    Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("news_articles")
+}
+
+model Resource {
+  id          String       @id @default(cuid())
+  title       String
+  slug        String       @unique
+  description String?
+  content     String?
+  type        ResourceType
+  fileUrl     String?
+  downloadUrl String?
+  image       String?
+  tags        String[]     @default([])
+  published   Boolean      @default(false)
+  featured    Boolean      @default(false)
+  downloads   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("resources")
+}
+
+model NavigationItem {
+  id        String   @id @default(cuid())
+  label     String
+  url       String
+  icon      String?
+  order     Int      @default(0)
+  published Boolean  @default(true)
+  parentId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Self-referencing relationship for nested navigation
+  parent   NavigationItem?  @relation("NavigationHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children NavigationItem[] @relation("NavigationHierarchy")
+
+  @@map("navigation_items")
+}
+
+model Page {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String?
+  metaTitle   String?
+  metaDescription String?
+  published   Boolean  @default(false)
+  template    String   @default("default")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("pages")
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  name        String
+  company     String?
+  position    String?
+  content     String
+  rating      Int      @default(5)
+  image       String?
+  featured    Boolean  @default(false)
+  published   Boolean  @default(false)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("testimonials")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  INTERVIEWING
+  REJECTED
+  ACCEPTED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  WON
+  LOST
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ResourceType {
+  DOCUMENT
+  VIDEO
+  IMAGE
+  TEMPLATE
+  GUIDE
+  WHITEPAPER
+  CASE_STUDY
+}
