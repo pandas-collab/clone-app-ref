@@ -1,45 +1,66 @@
-import { z } from "zod";
-// Basic validation functions for auth system
-export const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+import { z } from "zod"
 
-export const validatePassword = (password: string): boolean => {
-  return password.length >= 8;
-};
-
-export const loginSchema = {
-  email: (value: string) => {
-    if (!value) return 'Email is required';
-    if (!validateEmail(value)) return 'Invalid email format';
-    return null;
-  },
-  password: (value: string) => {
-    if (!value) return 'Password is required';
-    if (!validatePassword(value)) return 'Password must be at least 8 characters';
-    return null;
-  }
-};
-
-export type LoginFormData = {
-  email: string;
-  password: string;
-};
-
-// User validation schemas
-export const userSchema = z.object({
-  id: z.string().optional(),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["admin", "user"]).default("user"),
-  name: z.string().min(1, "Name is required").optional(),
-});
-
+// Authentication schemas
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
+  password: z.string().min(6, "Password must be at least 6 characters"),
+})
 
-export type UserInput = z.infer<typeof userSchema>;
-export type LoginInput = z.infer<typeof loginSchema>;
+// Service schemas
+export const serviceSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().min(1, "Description is required"),
+  content: z.string().optional(),
+  image: z.string().url().optional(),
+  featured: z.boolean().optional().default(false),
+  published: z.boolean().optional().default(true),
+})
+
+export const serviceCreateSchema = serviceSchema.omit({ slug: true })
+
+// Portfolio schemas
+export const portfolioSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().min(1, "Description is required"),
+  content: z.string().optional(),
+  image: z.string().url().optional(),
+  featured: z.boolean().optional().default(false),
+  published: z.boolean().optional().default(true),
+})
+
+// Career schemas
+export const careerSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  content: z.string().optional(),
+  location: z.string().min(1, "Location is required"),
+  type: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "FREELANCE"]),
+  published: z.boolean().optional().default(true),
+})
+
+// Contact form schema
+export const contactSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  subject: z.string().min(1, "Subject is required"),
+  message: z.string().min(1, "Message is required"),
+})
+
+// Application schema
+export const applicationSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().optional(),
+  coverLetter: z.string().min(1, "Cover letter is required"),
+  resume: z.string().url("Resume URL is required"),
+})
+
+export type LoginInput = z.infer<typeof loginSchema>
+export type ServiceInput = z.infer<typeof serviceSchema>
+export type ServiceCreateInput = z.infer<typeof serviceCreateSchema>
+export type PortfolioInput = z.infer<typeof portfolioSchema>
+export type CareerInput = z.infer<typeof careerSchema>
+export type ContactInput = z.infer<typeof contactSchema>
+export type ApplicationInput = z.infer<typeof applicationSchema>

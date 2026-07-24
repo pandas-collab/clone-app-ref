@@ -1,56 +1,40 @@
-import { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { User } from '../types/auth';
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+export async function getAuthSession() {
+  const session = await getServerSession(authOptions)
 
-        // Basic admin user check (replace with database lookup)
-        if (credentials.email === 'admin@company.com' && credentials.password === 'admin123') {
-          return {
-            id: '1',
-            email: 'admin@company.com',
-            name: 'Admin User',
-            role: 'ADMIN'
-          } as User;
-        }
+  if (!session || !session.user) {
+    return null
+  }
 
-        return null;
-      }
-    })
-  ],
-  session: {
-    strategy: 'jwt'
-  },
-  jwt: {
-    secret: process.env.NEXTAUTH_SECRET
-  },
-  pages: {
-    signIn: '/admin/login'
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = (user as User).role;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub!;
-        (session.user as any).role = token.role;
-      }
-      return session;
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      id: (session.user as any).id,
+      role: (session.user as any).role,
     }
   }
-};
+}
+
+export async function requireAuth() {
+  const session = await getAuthSession()
+
+  if (!session) {
+    throw new Error("Authentication required")
+  }
+
+  return session
+}
+
+export async function requireAdminAuth() {
+  const session = await requireAuth()
+
+  if (session.user.role !== "ADMIN") {
+    throw new Error("Admin access required")
+  }
+
+  return session
+}
+export { authOptions };
