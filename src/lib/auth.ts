@@ -1,8 +1,42 @@
-import { NextAuthOptions } from 'next-auth';
+import { NextAuthOptions, User } from 'next-auth';
+import { JWT } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { User } from '../types/auth';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import { prisma } from './prisma';
+import bcrypt from 'bcryptjs';
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      name?: string;
+      role: string;
+      image?: string;
+    };
+  }
+
+  interface User {
+    id: string;
+    email: string;
+    name?: string;
+    role: string;
+    image?: string;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    role: string;
+  }
+}
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: 'jwt',
+  },
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -15,42 +49,47 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // Basic admin user check (replace with database lookup)
-        if (credentials.email === 'admin@company.com' && credentials.password === 'admin123') {
-          return {
-            id: '1',
-            email: 'admin@company.com',
-            name: 'Admin User',
-            role: 'ADMIN'
-          } as User;
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        });
+
+        if (!user) {
+          return null;
         }
 
-        return null;
-      }
-    })
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password,
+          user.password || ''
+        );
+
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          image: user.image,
+        };
+      },
+    }),
   ],
-  session: {
-    strategy: 'jwt'
-  },
-  jwt: {
-    secret: process.env.NEXTAUTH_SECRET
-  },
-  pages: {
-    signIn: '/admin/login'
-  },
   callbacks: {
-    async jwt({ token, user }) {
+    async session({ token, session }) {
+      if (token && session.user) {
+        session.user.id = token.id;
+        session.user.role = token.role;
+      }
+      return session;
+    },
+    async jwt({ user, token }) {
       if (user) {
-        token.role = (user as User).role;
+        token.id = user.id;
+        token.role = user.role;
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub!;
-        (session.user as any).role = token.role;
-      }
-      return session;
-    }
-  }
+  },
 };
