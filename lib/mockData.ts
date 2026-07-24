@@ -78,6 +78,136 @@ export interface ApplicationData {
   updatedAt: Date;
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'super-admin';
+  avatar?: string;
+  isActive: boolean;
+  lastLogin: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DashboardMetric {
+  id: string;
+  title: string;
+  value: string;
+  change: number;
+  changeType: 'increase' | 'decrease';
+  icon: string;
+}
+
+export interface RecentActivity {
+  id: string;
+  type: 'service' | 'portfolio' | 'career' | 'application' | 'user';
+  action: 'created' | 'updated' | 'deleted' | 'published' | 'archived';
+  title: string;
+  description: string;
+  timestamp: string;
+  user: string;
+}
+
+export const mockAdminUsers: AdminUser[] = [
+  {
+    id: '1',
+    email: 'admin@company.com',
+    name: 'Admin User',
+    role: 'super-admin',
+    avatar: '/images/avatars/admin.jpg',
+    isActive: true,
+    lastLogin: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date('2024-01-01T00:00:00Z').toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    email: 'manager@company.com',
+    name: 'Manager User',
+    role: 'admin',
+    avatar: '/images/avatars/manager.jpg',
+    isActive: true,
+    lastLogin: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    createdAt: new Date('2024-01-15T00:00:00Z').toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+export const mockDashboardMetrics: DashboardMetric[] = [
+  {
+    id: '1',
+    title: 'Total Services',
+    value: '12',
+    change: 8.2,
+    changeType: 'increase',
+    icon: 'services'
+  },
+  {
+    id: '2',
+    title: 'Portfolio Projects',
+    value: '34',
+    change: 12.5,
+    changeType: 'increase',
+    icon: 'portfolio'
+  },
+  {
+    id: '3',
+    title: 'Open Positions',
+    value: '8',
+    change: -2.1,
+    changeType: 'decrease',
+    icon: 'careers'
+  },
+  {
+    id: '4',
+    title: 'Job Applications',
+    value: '156',
+    change: 15.3,
+    changeType: 'increase',
+    icon: 'applications'
+  }
+];
+
+export const mockRecentActivity: RecentActivity[] = [
+  {
+    id: '1',
+    type: 'service',
+    action: 'created',
+    title: 'New service added',
+    description: 'Cloud Infrastructure service was created',
+    timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    user: 'Admin User'
+  },
+  {
+    id: '2',
+    type: 'portfolio',
+    action: 'updated',
+    title: 'Portfolio project updated',
+    description: 'E-commerce Platform project details were modified',
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    user: 'Manager User'
+  },
+  {
+    id: '3',
+    type: 'career',
+    action: 'published',
+    title: 'Job position published',
+    description: 'Senior Frontend Developer position is now live',
+    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    user: 'Admin User'
+  },
+  {
+    id: '4',
+    type: 'application',
+    action: 'created',
+    title: 'New application received',
+    description: 'Application for Full Stack Developer position',
+    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    user: 'System'
+  }
+];
+
 export const mockServices: ServiceData[] = [
   {
     id: '1',
@@ -239,17 +369,17 @@ export const mockPortfolio: PortfolioData[] = [
     industry: 'Finance',
     servicesUsed: ['Web Development', 'Mobile App Development', 'Real-time Data Integration'],
     challenge: 'InvestPro required a high-performance trading platform capable of handling real-time market data, executing trades instantly, and providing advanced charting tools for professional traders.',
-    solution: 'We built a sophisticated trading platform using React and Node.js with WebSocket connections for real-time data, advanced charting libraries, and secure payment processing. The platform includes both web and mobile applications.',
-    results: 'The platform now handles over 10,000 concurrent users, processes trades in under 100ms, and has achieved 99.9% uptime. User adoption increased by 200% within the first quarter.',
+    solution: 'We built a sophisticated trading platform using React and Node.js with WebSocket connections for real-time data, advanced charting libraries, and secure payment processing.',
+    results: 'The platform now handles over 10,000 concurrent users with 99.9% uptime and sub-millisecond trade execution times.',
     metrics: [
       { label: 'Concurrent Users', value: '10,000+' },
-      { label: 'Trade Execution Speed', value: '<100ms' },
       { label: 'Platform Uptime', value: '99.9%' },
-      { label: 'User Adoption Growth', value: '200%' }
+      { label: 'Trade Execution Speed', value: '<1ms' },
+      { label: 'User Satisfaction', value: '98%' }
     ],
     testimonial: {
-      content: 'The platform performance is outstanding. Our traders love the speed and reliability of the new system.',
-      author: 'Robert Martinez',
+      content: 'The platform performance is outstanding. Our traders love the speed and reliability.',
+      author: 'Robert Kim',
       position: 'CTO, InvestPro'
     },
     featuredImage: '/images/portfolio/trading-platform.jpg',
@@ -258,275 +388,64 @@ export const mockPortfolio: PortfolioData[] = [
       '/images/portfolio/trading-platform-2.jpg',
       '/images/portfolio/trading-platform-3.jpg'
     ],
-    status: 'draft',
-    createdAt: new Date('2024-01-22T09:00:00Z'),
+    status: 'published',
+    createdAt: new Date('2024-01-05T09:00:00Z'),
     updatedAt: new Date('2024-02-01T10:30:00Z')
   }
 ];
 
-export const mockCareers: CareerData[] = [
-  {
-    id: '1',
-    title: 'Senior Full Stack Developer',
-    slug: 'senior-full-stack-developer',
-    department: 'Engineering',
-    location: 'San Francisco, CA',
-    type: 'full-time',
-    remote: true,
-    salaryRange: '$120,000 - $160,000',
-    description: 'We are seeking an experienced Full Stack Developer to join our growing engineering team. You will be responsible for developing and maintaining web applications using modern technologies.',
-    requirements: [
-      '5+ years of experience in full stack development',
-      'Proficiency in React, Node.js, and TypeScript',
-      'Experience with databases (PostgreSQL, MongoDB)',
-      'Knowledge of cloud platforms (AWS, GCP)',
-      'Strong problem-solving skills'
-    ],
-    responsibilities: [
-      'Develop and maintain web applications',
-      'Collaborate with design and product teams',
-      'Write clean, maintainable code',
-      'Participate in code reviews',
-      'Mentor junior developers'
-    ],
-    benefits: [
-      'Competitive salary and equity',
-      'Flexible working hours',
-      'Remote work options',
-      'Health insurance',
-      'Professional development budget'
-    ],
-    status: 'active',
-    applicationCount: 24,
-    createdAt: new Date('2024-01-15T09:00:00Z'),
-    updatedAt: new Date('2024-02-01T14:20:00Z')
-  },
-  {
-    id: '2',
-    title: 'UI/UX Designer',
-    slug: 'ui-ux-designer',
-    department: 'Design',
-    location: 'New York, NY',
-    type: 'full-time',
-    remote: false,
-    salaryRange: '$80,000 - $110,000',
-    description: 'Join our design team to create intuitive and engaging user experiences for our digital products. You will work closely with product managers and developers to bring designs to life.',
-    requirements: [
-      '3+ years of UI/UX design experience',
-      'Proficiency in Figma, Sketch, or Adobe Creative Suite',
-      'Strong portfolio demonstrating design process',
-      'Understanding of user-centered design principles',
-      'Experience with prototyping tools'
-    ],
-    responsibilities: [
-      'Create user interface designs and prototypes',
-      'Conduct user research and usability testing',
-      'Collaborate with development teams',
-      'Maintain design systems and style guides',
-      'Present design concepts to stakeholders'
-    ],
-    benefits: [
-      'Creative work environment',
-      'Latest design tools and software',
-      'Conference and workshop attendance',
-      'Flexible PTO policy',
-      'Team building activities'
-    ],
-    status: 'active',
-    applicationCount: 18,
-    createdAt: new Date('2024-01-20T11:30:00Z'),
-    updatedAt: new Date('2024-01-28T16:45:00Z')
-  },
-  {
-    id: '3',
-    title: 'DevOps Engineer',
-    slug: 'devops-engineer',
-    department: 'Infrastructure',
-    location: 'Austin, TX',
-    type: 'full-time',
-    remote: true,
-    salaryRange: '$100,000 - $140,000',
-    description: 'We are looking for a DevOps Engineer to help us scale our infrastructure and improve our deployment processes. You will work on automation, monitoring, and security.',
-    requirements: [
-      '4+ years of DevOps or infrastructure experience',
-      'Experience with AWS, Docker, and Kubernetes',
-      'Knowledge of CI/CD pipelines',
-      'Scripting skills (Python, Bash)',
-      'Understanding of security best practices'
-    ],
-    responsibilities: [
-      'Manage cloud infrastructure',
-      'Implement CI/CD pipelines',
-      'Monitor system performance',
-      'Ensure security compliance',
-      'Automate deployment processes'
-    ],
-    benefits: [
-      'Cutting-edge technology stack',
-      'Learning and development opportunities',
-      'Stock options',
-      '401(k) matching',
-      'Unlimited vacation policy'
-    ],
-    status: 'paused',
-    applicationCount: 12,
-    createdAt: new Date('2024-01-25T13:15:00Z'),
-    updatedAt: new Date('2024-01-30T10:00:00Z')
+export const getAdminUserByEmail = (email: string): AdminUser | undefined => {
+  if (!email || typeof email !== 'string') {
+    return undefined;
   }
-];
+  return mockAdminUsers.find(user => user.email.toLowerCase() === email.toLowerCase());
+};
 
-export const mockApplications: ApplicationData[] = [
-  {
-    id: '1',
-    jobId: '1',
-    jobTitle: 'Senior Full Stack Developer',
-    firstName: 'John',
-    lastName: 'Smith',
-    email: 'john.smith@email.com',
-    phone: '+1 (555) 123-4567',
-    coverLetter: 'I am excited to apply for the Senior Full Stack Developer position. With over 6 years of experience in full stack development, I have worked extensively with React, Node.js, and TypeScript. My recent project involved building a scalable e-commerce platform that serves over 100,000 users.',
-    resumeUrl: '/documents/resumes/john-smith-resume.pdf',
-    portfolioUrl: 'https://johnsmith.dev',
-    linkedinUrl: 'https://linkedin.com/in/johnsmith',
-    status: 'reviewing',
-    createdAt: new Date('2024-01-28T14:30:00Z'),
-    updatedAt: new Date('2024-02-01T09:15:00Z')
-  },
-  {
-    id: '2',
-    jobId: '1',
-    jobTitle: 'Senior Full Stack Developer',
-    firstName: 'Emily',
-    lastName: 'Johnson',
-    email: 'emily.johnson@email.com',
-    phone: '+1 (555) 234-5678',
-    coverLetter: 'As a passionate full stack developer with 5 years of experience, I am thrilled about the opportunity to join your team. I have successfully delivered multiple React and Node.js projects and have experience with cloud platforms including AWS and Google Cloud.',
-    resumeUrl: '/documents/resumes/emily-johnson-resume.pdf',
-    portfolioUrl: 'https://emilyjohnson.portfolio.com',
-    status: 'shortlisted',
-    createdAt: new Date('2024-01-30T16:45:00Z'),
-    updatedAt: new Date('2024-02-02T11:30:00Z')
-  },
-  {
-    id: '3',
-    jobId: '2',
-    jobTitle: 'UI/UX Designer',
-    firstName: 'Michael',
-    lastName: 'Brown',
-    email: 'michael.brown@email.com',
-    phone: '+1 (555) 345-6789',
-    coverLetter: 'I am a creative UI/UX designer with 4 years of experience in creating user-centered designs. My portfolio includes projects for both startups and established companies, focusing on mobile-first design and accessibility.',
-    resumeUrl: '/documents/resumes/michael-brown-resume.pdf',
-    portfolioUrl: 'https://michaelbrown.design',
-    linkedinUrl: 'https://linkedin.com/in/michaelbrown',
-    status: 'pending',
-    createdAt: new Date('2024-02-01T10:20:00Z'),
-    updatedAt: new Date('2024-02-01T10:20:00Z')
+export const getDashboardMetrics = (): DashboardMetric[] => {
+  return [...mockDashboardMetrics];
+};
+
+export const getRecentActivity = (limit?: number): RecentActivity[] => {
+  const activities = [...mockRecentActivity].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+  
+  if (limit && typeof limit === 'number' && limit > 0) {
+    return activities.slice(0, limit);
   }
-];
-
-// Utility functions for working with mock data
-export const getServiceById = (id: string): ServiceData | undefined => {
-  return mockServices.find(service => service.id === id);
+  
+  return activities;
 };
 
-export const getServiceBySlug = (slug: string): ServiceData | undefined => {
-  return mockServices.find(service => service.slug === slug);
+export const getActivityByType = (type: RecentActivity['type']): RecentActivity[] => {
+  if (!type) {
+    return [];
+  }
+  return mockRecentActivity.filter(activity => activity.type === type);
 };
 
-export const getPortfolioById = (id: string): PortfolioData | undefined => {
-  return mockPortfolio.find(item => item.id === id);
+export const isValidAdminUser = (email: string, password: string): boolean => {
+  if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
+    return false;
+  }
+  
+  const user = getAdminUserByEmail(email);
+  return user?.isActive === true;
 };
 
-export const getPortfolioBySlug = (slug: string): PortfolioData | undefined => {
-  return mockPortfolio.find(item => item.slug === slug);
+export const updateUserLastLogin = (email: string): AdminUser | null => {
+  if (!email || typeof email !== 'string') {
+    return null;
+  }
+  
+  const userIndex = mockAdminUsers.findIndex(
+    user => user.email.toLowerCase() === email.toLowerCase()
+  );
+  
+  if (userIndex !== -1) {
+    mockAdminUsers[userIndex].lastLogin = new Date().toISOString();
+    return { ...mockAdminUsers[userIndex] };
+  }
+  
+  return null;
 };
-
-export const getCareerById = (id: string): CareerData | undefined => {
-  return mockCareers.find(job => job.id === id);
-};
-
-export const getCareerBySlug = (slug: string): CareerData | undefined => {
-  return mockCareers.find(job => job.slug === slug);
-};
-
-export const getApplicationById = (id: string): ApplicationData | undefined => {
-  return mockApplications.find(app => app.id === id);
-};
-
-export const getApplicationsByJobId = (jobId: string): ApplicationData[] => {
-  return mockApplications.filter(app => app.jobId === jobId);
-};
-
-export const filterServicesByCategory = (category: string): ServiceData[] => {
-  return mockServices.filter(service => service.category === category);
-};
-
-export const filterPortfolioByIndustry = (industry: string): PortfolioData[] => {
-  return mockPortfolio.filter(item => item.industry === industry);
-};
-
-export const filterCareersByDepartment = (department: string): CareerData[] => {
-  return mockCareers.filter(job => job.department === department);
-};
-
-export const filterApplicationsByStatus = (status: ApplicationData['status']): ApplicationData[] => {
-  return mockApplications.filter(app => app.status === status);
-};
-
-// Constants for form options
-export const SERVICE_CATEGORIES = [
-  'Development',
-  'Design',
-  'Consulting',
-  'Marketing',
-  'Support'
-];
-
-export const PORTFOLIO_INDUSTRIES = [
-  'Technology',
-  'Healthcare',
-  'Finance',
-  'E-commerce',
-  'Education',
-  'Real Estate',
-  'Manufacturing',
-  'Entertainment'
-];
-
-export const JOB_DEPARTMENTS = [
-  'Engineering',
-  'Design',
-  'Product',
-  'Marketing',
-  'Sales',
-  'Infrastructure',
-  'Operations',
-  'Human Resources'
-];
-
-export const JOB_TYPES = [
-  'full-time',
-  'part-time',
-  'contract',
-  'freelance'
-] as const;
-
-export const APPLICATION_STATUSES = [
-  'pending',
-  'reviewing',
-  'shortlisted',
-  'rejected',
-  'hired'
-] as const;
-
-export const JOB_STATUSES = [
-  'active',
-  'paused',
-  'closed'
-] as const;
-
-export const CONTENT_STATUSES = [
-  'published',
-  'draft'
-] as const;

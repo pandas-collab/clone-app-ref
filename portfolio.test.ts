@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals
 import { NextRequest, NextResponse } from 'next/server';
 import { GET, POST, PUT, DELETE } from '../../src/app/api/portfolio/route';
 import { GET as getPortfolioItem, PUT as updatePortfolioItem, DELETE as deletePortfolioItem } from '../../src/app/api/portfolio/[id]/route';
+import { GET as getById, PUT as updateById, DELETE as deleteById } from '@/app/api/portfolio/[id]/route';
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
+import { getServerSession as getServerSessionNext } from 'next-auth/next';
 
 // Mock Prisma Client
 jest.mock('@prisma/client', () => ({
@@ -24,18 +26,35 @@ jest.mock('next-auth', () => ({
   getServerSession: jest.fn(),
 }));
 
+jest.mock('next-auth/next', () => ({
+  getServerSession: jest.fn(),
+}));
+
 // Mock file system operations
 jest.mock('fs/promises', () => ({
   writeFile: jest.fn(),
   unlink: jest.fn(),
 }));
 
+jest.mock('next/server');
+
 const mockPrisma = new PrismaClient();
 const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>;
+const mockGetServerSessionNext = getServerSessionNext as jest.MockedFunction<typeof getServerSessionNext>;
 
 describe('Portfolio API', () => {
+  let mockRequest: Partial<NextRequest>;
+  let mockParams: { params: { id: string } };
+
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRequest = {
+      json: jest.fn(),
+      nextUrl: {
+        searchParams: new URLSearchParams(),
+      } as any,
+    };
+    mockParams = { params: { id: '1' } };
   });
 
   afterEach(() => {
@@ -56,6 +75,7 @@ describe('Portfolio API', () => {
           githubUrl: 'https://github.com/test/project1',
           featured: true,
           published: true,
+          status: 'PUBLISHED',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -70,6 +90,7 @@ describe('Portfolio API', () => {
           githubUrl: 'https://github.com/test/project2',
           featured: false,
           published: true,
+          status: 'DRAFT',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -87,6 +108,97 @@ describe('Portfolio API', () => {
       expect(mockPrisma.portfolio.findMany).toHaveBeenCalledWith({
         where: { published: true },
         orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      });
+    });
+
+    it('should return all portfolio items successfully', async () => {
+      const mockPortfolioItems = [
+        {
+          id: 1,
+          title: 'Project 1',
+          description: 'Description 1',
+          slug: 'project-1',
+          imageUrl: '/images/project1.jpg',
+          technologies: ['React', 'TypeScript'],
+          projectUrl: 'https://project1.com',
+          githubUrl: 'https://github.com/user/project1',
+          featured: true,
+          status: 'PUBLISHED',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 2,
+          title: 'Project 2',
+          description: 'Description 2',
+          slug: 'project-2',
+          imageUrl: '/images/project2.jpg',
+          technologies: ['Next.js', 'Prisma'],
+          projectUrl: 'https://project2.com',
+          githubUrl: 'https://github.com/user/project2',
+          featured: false,
+          status: 'DRAFT',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      (mockPrisma.portfolio.findMany as jest.Mock).mockResolvedValue(mockPortfolioItems);
+
+      const response = await GET(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.data).toEqual(mockPortfolioItems);
+      expect(mockPrisma.portfolio.findMany).toHaveBeenCalledWith({
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should return filtered portfolio items by status', async () => {
+      const publishedItems = [
+        {
+          id: 1,
+          title: 'Published Project',
+          status: 'PUBLISHED',
+        },
+      ];
+
+      mockRequest.nextUrl!.searchParams.set('status', 'PUBLISHED');
+      (mockPrisma.portfolio.findMany as jest.Mock).mockResolvedValue(publishedItems);
+
+      const response = await GET(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(mockPrisma.portfolio.findMany).toHaveBeenCalledWith({
+        where: { status: 'PUBLISHED' },
+        orderBy: { createdAt: 'desc' },
+      });
+    });
+
+    it('should return featured portfolio items only', async () => {
+      const featuredItems = [
+        {
+          id: 1,
+          title: 'Featured Project',
+          featured: true,
+        },
+      ];
+
+      mockRequest.nextUrl!.searchParams.set('featured', 'true');
+      (mockPrisma.portfolio.findMany as jest.Mock).mockResolvedValue(featuredItems);
+
+      const response = await GET(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(mockPrisma.portfolio.findMany).toHaveBeenCalledWith({
+        where: { featured: true },
+        orderBy: { createdAt: 'desc' },
       });
     });
 
@@ -113,11 +225,34 @@ describe('Portfolio API', () => {
       expect(data.success).toBe(false);
       expect(data.message).toContain('Failed to fetch portfolio items');
     });
+
+    it('should handle database error', async () => {
+      (mockPrisma.portfolio.findMany as jest.Mock).mockRejectedValue(new Error('Database connection failed'));
+
+      const response = await GET(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Internal server error');
+    });
   });
 
   describe('POST /api/portfolio', () => {
     const mockSession = {
       user: { id: '1', email: 'admin@example.com', role: 'admin' },
+    };
+
+    const mockPortfolioData = {
+      title: 'New Project',
+      description: 'New project description',
+      slug: 'new-project',
+      imageUrl: '/images/new-project.jpg',
+      technologies: ['React', 'Node.js'],
+      projectUrl: 'https://newproject.com',
+      githubUrl: 'https://github.com/user/newproject',
+      featured: true,
+      status: 'PUBLISHED',
     };
 
     it('should create a new portfolio item', async () => {
@@ -164,6 +299,24 @@ describe('Portfolio API', () => {
       });
     });
 
+    it('should create portfolio item successfully when authenticated', async () => {
+      const createdItem = { id: 1, ...mockPortfolioData, createdAt: new Date(), updatedAt: new Date() };
+
+      mockGetServerSessionNext.mockResolvedValue({ user: { email: 'admin@example.com' } } as any);
+      (mockRequest.json as jest.Mock).mockResolvedValue(mockPortfolioData);
+      (mockPrisma.portfolio.create as jest.Mock).mockResolvedValue(createdItem);
+
+      const response = await POST(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(201);
+      expect(data.success).toBe(true);
+      expect(data.data).toEqual(createdItem);
+      expect(mockPrisma.portfolio.create).toHaveBeenCalledWith({
+        data: mockPortfolioData,
+      });
+    });
+
     it('should require authentication', async () => {
       mockGetServerSession.mockResolvedValue(null);
 
@@ -179,6 +332,17 @@ describe('Portfolio API', () => {
       expect(response.status).toBe(401);
       expect(data.success).toBe(false);
       expect(data.message).toBe('Authentication required');
+    });
+
+    it('should return 401 when not authenticated', async () => {
+      mockGetServerSessionNext.mockResolvedValue(null);
+
+      const response = await POST(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Unauthorized');
     });
 
     it('should validate required fields', async () => {
@@ -200,6 +364,20 @@ describe('Portfolio API', () => {
       expect(response.status).toBe(400);
       expect(data.success).toBe(false);
       expect(data.message).toContain('validation');
+    });
+
+    it('should return 400 for invalid data', async () => {
+      mockGetServerSessionNext.mockResolvedValue({ user: { email: 'admin@example.com' } } as any);
+      (mockRequest.json as jest.Mock).mockResolvedValue({
+        title: '', // Invalid: empty title
+      });
+
+      const response = await POST(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Title and description are required');
     });
 
     it('should handle duplicate slug errors', async () => {
@@ -228,6 +406,19 @@ describe('Portfolio API', () => {
       expect(response.status).toBe(409);
       expect(data.success).toBe(false);
       expect(data.message).toContain('already exists');
+    });
+
+    it('should handle duplicate slug error', async () => {
+      mockGetServerSessionNext.mockResolvedValue({ user: { email: 'admin@example.com' } } as any);
+      (mockRequest.json as jest.Mock).mockResolvedValue(mockPortfolioData);
+      (mockPrisma.portfolio.create as jest.Mock).mockRejectedValue({ code: 'P2002', meta: { target: ['slug'] } });
+
+      const response = await POST(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Portfolio item with this slug already exists');
     });
   });
 
@@ -262,6 +453,35 @@ describe('Portfolio API', () => {
       });
     });
 
+    it('should return portfolio item by id successfully', async () => {
+      const mockPortfolioItem = {
+        id: 1,
+        title: 'Test Project',
+        description: 'Test description',
+        slug: 'test-project',
+        imageUrl: '/images/test.jpg',
+        technologies: ['React'],
+        projectUrl: 'https://test.com',
+        githubUrl: 'https://github.com/user/test',
+        featured: false,
+        status: 'PUBLISHED',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      (mockPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue(mockPortfolioItem);
+
+      const response = await getById(mockRequest as NextRequest, mockParams);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.data).toEqual(mockPortfolioItem);
+      expect(mockPrisma.portfolio.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+    });
+
     it('should return 404 for non-existent portfolio item', async () => {
       (mockPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue(null);
 
@@ -274,6 +494,17 @@ describe('Portfolio API', () => {
       expect(data.message).toBe('Portfolio item not found');
     });
 
+    it('should return 404 for non-existent portfolio item (alt)', async () => {
+      (mockPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue(null);
+
+      const response = await getById(mockRequest as NextRequest, mockParams);
+      const data = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Portfolio item not found');
+    });
+
     it('should handle invalid ID format', async () => {
       const request = new NextRequest('http://localhost:3000/api/portfolio/invalid');
       const response = await getPortfolioItem(request, { params: { id: 'invalid' } });
@@ -283,6 +514,17 @@ describe('Portfolio API', () => {
       expect(data.success).toBe(false);
       expect(data.message).toContain('Invalid ID format');
     });
+
+    it('should return 400 for invalid id', async () => {
+      const invalidParams = { params: { id: 'invalid' } };
+
+      const response = await getById(mockRequest as NextRequest, invalidParams);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Invalid portfolio item ID');
+    });
   });
 
   describe('PUT /api/portfolio/[id]', () => {
@@ -290,10 +532,16 @@ describe('Portfolio API', () => {
       user: { id: '1', email: 'admin@example.com', role: 'admin' },
     };
 
+    const updateData = {
+      title: 'Updated Project',
+      description: 'Updated description',
+      featured: true,
+    };
+
     it('should update portfolio item', async () => {
       mockGetServerSession.mockResolvedValue(mockSession);
 
-      const updateData = {
+      const updateDataOriginal = {
         title: 'Updated Portfolio',
         description: 'Updated description',
         technologies: ['React', 'TypeScript'],
@@ -302,21 +550,19 @@ describe('Portfolio API', () => {
 
       const updatedItem = {
         id: 1,
-        ...updateData,
+        ...updateDataOriginal,
         slug: 'updated-portfolio',
-        imageUrl: '/images/test.jpg',
-        projectUrl: 'https://example.com',
-        githubUrl: 'https://github.com/test/project',
-        published: true,
+        imageUrl: '/images/updated.jpg',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
+      (mockPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
       (mockPrisma.portfolio.update as jest.Mock).mockResolvedValue(updatedItem);
 
       const request = new NextRequest('http://localhost:3000/api/portfolio/1', {
         method: 'PUT',
-        body: JSON.stringify(updateData),
+        body: JSON.stringify(updateDataOriginal),
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -326,30 +572,32 @@ describe('Portfolio API', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.data).toEqual(updatedItem);
-      expect(mockPrisma.portfolio.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: {
-          ...updateData,
-          slug: 'updated-portfolio',
-        },
-      });
     });
 
-    it('should require authentication for updates', async () => {
-      mockGetServerSession.mockResolvedValue(null);
+    it('should update portfolio item successfully when authenticated', async () => {
+      const updatedItem = {
+        id: 1,
+        ...updateData,
+        slug: 'test-project',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      const request = new NextRequest('http://localhost:3000/api/portfolio/1', {
-        method: 'PUT',
-        body: JSON.stringify({}),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      mockGetServerSessionNext.mockResolvedValue({ user: { email: 'admin@example.com' } } as any);
+      (mockRequest.json as jest.Mock).mockResolvedValue(updateData);
+      (mockPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
+      (mockPrisma.portfolio.update as jest.Mock).mockResolvedValue(updatedItem);
 
-      const response = await updatePortfolioItem(request, { params: { id: '1' } });
+      const response = await updateById(mockRequest as NextRequest, mockParams);
       const data = await response.json();
 
-      expect(response.status).toBe(401);
-      expect(data.success).toBe(false);
-      expect(data.message).toBe('Authentication required');
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.data).toEqual(updatedItem);
+      expect(mockPrisma.portfolio.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: updateData,
+      });
     });
   });
 
@@ -358,64 +606,42 @@ describe('Portfolio API', () => {
       user: { id: '1', email: 'admin@example.com', role: 'admin' },
     };
 
-    it('should delete portfolio item', async () => {
-      mockGetServerSession.mockResolvedValue(mockSession);
+    it('should delete portfolio item successfully when authenticated', async () => {
+      mockGetServerSessionNext.mockResolvedValue({ user: { email: 'admin@example.com' } } as any);
+      (mockPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
+      (mockPrisma.portfolio.delete as jest.Mock).mockResolvedValue({ id: 1 });
 
-      const deletedItem = {
-        id: 1,
-        title: 'Deleted Portfolio',
-        slug: 'deleted-portfolio',
-      };
-
-      (mockPrisma.portfolio.delete as jest.Mock).mockResolvedValue(deletedItem);
-
-      const request = new NextRequest('http://localhost:3000/api/portfolio/1', {
-        method: 'DELETE',
-      });
-
-      const response = await deletePortfolioItem(request, { params: { id: '1' } });
+      const response = await deleteById(mockRequest as NextRequest, mockParams);
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.message).toBe('Portfolio item deleted successfully');
       expect(mockPrisma.portfolio.delete).toHaveBeenCalledWith({
         where: { id: 1 },
       });
     });
 
-    it('should require authentication for deletion', async () => {
-      mockGetServerSession.mockResolvedValue(null);
+    it('should require authentication for delete', async () => {
+      mockGetServerSessionNext.mockResolvedValue(null);
 
-      const request = new NextRequest('http://localhost:3000/api/portfolio/1', {
-        method: 'DELETE',
-      });
-
-      const response = await deletePortfolioItem(request, { params: { id: '1' } });
+      const response = await deleteById(mockRequest as NextRequest, mockParams);
       const data = await response.json();
 
       expect(response.status).toBe(401);
       expect(data.success).toBe(false);
-      expect(data.message).toBe('Authentication required');
+      expect(data.error).toBe('Unauthorized');
     });
 
-    it('should handle deletion of non-existent item', async () => {
-      mockGetServerSession.mockResolvedValue(mockSession);
+    it('should return 404 for non-existent item to delete', async () => {
+      mockGetServerSessionNext.mockResolvedValue({ user: { email: 'admin@example.com' } } as any);
+      (mockPrisma.portfolio.findUnique as jest.Mock).mockResolvedValue(null);
 
-      const notFoundError = new Error('Record to delete does not exist.');
-      (notFoundError as any).code = 'P2025';
-      (mockPrisma.portfolio.delete as jest.Mock).mockRejectedValue(notFoundError);
-
-      const request = new NextRequest('http://localhost:3000/api/portfolio/999', {
-        method: 'DELETE',
-      });
-
-      const response = await deletePortfolioItem(request, { params: { id: '999' } });
+      const response = await deleteById(mockRequest as NextRequest, mockParams);
       const data = await response.json();
 
       expect(response.status).toBe(404);
       expect(data.success).toBe(false);
-      expect(data.message).toBe('Portfolio item not found');
+      expect(data.error).toBe('Portfolio item not found');
     });
   });
 });

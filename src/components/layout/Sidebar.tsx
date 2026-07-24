@@ -1,4 +1,57 @@
-if (!href.startsWith('/admin')) {
+'use client';
+
+import Link from 'next/link';
+import { useState } from 'react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import {
+  HomeIcon,
+  CogIcon,
+  BriefcaseIcon,
+  PhotoIcon,
+  UserGroupIcon,
+  DocumentTextIcon,
+  ArrowRightOnRectangleIcon,
+  UserCircleIcon
+} from '@heroicons/react/24/outline';
+
+interface SidebarProps {
+  collapsed?: boolean;
+  onToggle?: () => void;
+  className?: string;
+  navigation?: Array<{
+    name: string;
+    href: string;
+    icon: any;
+    current: boolean;
+  }>;
+}
+
+export default function Sidebar({ collapsed = false, onToggle, className = '', navigation }: SidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(collapsed);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const defaultNavigationItems = [
+    { href: '/admin', label: 'Dashboard', icon: HomeIcon },
+    { href: '/admin/services', label: 'Services', icon: CogIcon },
+    { href: '/admin/portfolio', label: 'Portfolio', icon: PhotoIcon },
+    { href: '/admin/careers', label: 'Jobs', icon: BriefcaseIcon },
+    { href: '/admin/applications', label: 'Applications', icon: DocumentTextIcon },
+  ];
+
+  const handleToggle = () => {
+    setIsCollapsed(!isCollapsed);
+    onToggle?.();
+  };
+
+  const handleLogout = () => {
+    // Logout functionality
+    console.log('Logging out...');
+    window.location.href = '/admin/login';
+  };
+
+  const handleLinkClick = (href: string) => {
+    try {
+      if (!href.startsWith('/admin')) {
         console.warn('Sidebar navigation attempted to external URL:', href);
         return;
       }
@@ -7,63 +60,80 @@ if (!href.startsWith('/admin')) {
     }
   };
 
+  // Use passed navigation prop or fall back to default
+  const navItems = navigation || defaultNavigationItems.map(item => ({
+    name: item.label,
+    href: item.href,
+    icon: item.icon,
+    current: false
+  }));
+
   return (
-    <div className={`bg-white shadow-sm border-r border-gray-200 ${className}`}>
-      <div className="flex flex-col h-full">
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800">Admin Panel</h2>
-        </div>
+    <div className={`bg-gray-900 text-white h-full transition-all duration-300 ${
+      isCollapsed ? 'w-16' : 'w-64'
+    } ${className}`}>
+      {/* Header */}
+      <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+        {!isCollapsed && <h2 className="text-lg font-semibold">Admin Panel</h2>}
+        <button
+          onClick={handleToggle}
+          className="p-1 rounded hover:bg-gray-800"
+        >
+          {isCollapsed ? (
+            <ChevronRightIcon className="w-5 h-5" />
+          ) : (
+            <ChevronLeftIcon className="w-5 h-5" />
+          )}
+        </button>
+      </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const isActive = item.current;
-            
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={() => handleLinkClick(item.href)}
-                className={`
-                  group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200
-                  ${isActive
-                    ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }
-                `}
-                aria-current={isActive ? 'page' : undefined}
+      {/* Navigation */}
+      <nav className="mt-4">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = item.current;
+          
+          return (
+            <Link
+              key={item.name || item.href}
+              href={item.href}
+              onClick={() => handleLinkClick(item.href)}
+              className={`flex items-center px-4 py-3 transition-colors ${
+                isActive
+                  ? 'bg-blue-800 text-white border-r-2 border-blue-400'
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <Icon className="w-5 h-5 mr-3" />
+              {!isCollapsed && <span>{item.name || item.label}</span>}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* User Menu */}
+      <div className="absolute bottom-0 w-full border-t border-gray-700">
+        <div className="relative">
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="w-full flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+          >
+            <UserCircleIcon className="w-5 h-5 mr-3" />
+            {!isCollapsed && <span>Admin User</span>}
+          </button>
+
+          {showUserMenu && !isCollapsed && (
+            <div className="absolute bottom-full left-0 right-0 bg-gray-800 border-t border-gray-700">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
               >
-                <Icon
-                  className={`
-                    flex-shrink-0 w-5 h-5 mr-3 transition-colors duration-200
-                    ${isActive 
-                      ? 'text-blue-500' 
-                      : 'text-gray-400 group-hover:text-gray-500'
-                    }
-                  `}
-                  aria-hidden="true"
-                />
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Sidebar Footer */}
-        <div className="flex-shrink-0 p-4 border-t border-gray-200">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 text-sm font-medium">A</span>
-              </div>
+                <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />
+                Logout
+              </button>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-700">Admin User</p>
-              <p className="text-xs text-gray-500">Online</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

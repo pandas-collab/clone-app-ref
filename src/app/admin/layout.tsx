@@ -1,4 +1,38 @@
-if (status === 'loading') return;
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { 
+  Menu, 
+  X, 
+  LayoutDashboard, 
+  Users, 
+  FileText, 
+  Settings,
+  LogOut 
+} from 'lucide-react';
+
+interface AdminLayoutProps {
+  children: React.ReactNode;
+}
+
+const navigation = [
+  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Content', href: '/admin/content', icon: FileText },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
+];
+
+export default function AdminLayout({ children }: AdminLayoutProps) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (status === 'loading') return;
     
     // Skip authentication check for login page
     if (pathname === '/admin/login') return;

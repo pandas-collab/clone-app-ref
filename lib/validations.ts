@@ -24,6 +24,136 @@ export const imageSchema = z.object({
   height: z.number().min(1).optional(),
 });
 
+// Authentication Schemas
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(6, 'Password must be at least 6 characters'),
+});
+
+export const registerSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name cannot exceed 50 characters'),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(6, 'Password must be at least 6 characters')
+    .max(100, 'Password cannot exceed 100 characters'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z
+    .string()
+    .min(1, 'Current password is required'),
+  newPassword: z
+    .string()
+    .min(1, 'New password is required')
+    .min(6, 'Password must be at least 6 characters')
+    .max(100, 'Password cannot exceed 100 characters'),
+  confirmPassword: z.string().min(1, 'Please confirm your new password'),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+});
+
+export const resetPasswordSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+});
+
+export const newPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(6, 'Password must be at least 6 characters')
+    .max(100, 'Password cannot exceed 100 characters'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+});
+
+// Admin authentication
+export const adminLoginSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, 'Password is required'),
+  remember: z.boolean().optional(),
+});
+
+// User Management Schemas
+export const createUserSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name cannot exceed 50 characters'),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(6, 'Password must be at least 6 characters')
+    .max(100, 'Password cannot exceed 100 characters'),
+  role: z.enum(['ADMIN', 'USER']).default('USER'),
+});
+
+export const updateUserSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name cannot exceed 50 characters')
+    .optional(),
+  email: z
+    .string()
+    .email('Please enter a valid email address')
+    .optional(),
+  role: z.enum(['ADMIN', 'USER']).optional(),
+  isActive: z.boolean().optional(),
+});
+
+// Session and Token Schemas
+export const sessionSchema = z.object({
+  user: z.object({
+    id: z.string(),
+    name: z.string().nullable(),
+    email: z.string(),
+    role: z.enum(['ADMIN', 'USER']),
+    isActive: z.boolean(),
+  }),
+  expires: z.string(),
+});
+
+export const jwtTokenSchema = z.object({
+  sub: z.string(), // user id
+  email: z.string(),
+  name: z.string().nullable(),
+  role: z.enum(['ADMIN', 'USER']),
+  isActive: z.boolean(),
+  iat: z.number(),
+  exp: z.number(),
+});
+
 // Contact form validation
 export const contactFormSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
@@ -55,6 +185,31 @@ export const serviceFormSchema = z.object({
     priceType: z.enum(['fixed', 'hourly', 'project', 'custom']).optional(),
   }).optional(),
 });
+
+// Service Management Schemas
+export const createServiceSchema = z.object({
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(100, 'Title cannot exceed 100 characters'),
+  description: z
+    .string()
+    .min(1, 'Description is required')
+    .max(500, 'Description cannot exceed 500 characters'),
+  content: z
+    .string()
+    .min(1, 'Content is required')
+    .max(5000, 'Content cannot exceed 5000 characters'),
+  slug: z
+    .string()
+    .min(1, 'Slug is required')
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
+  icon: z.string().optional(),
+  image: z.string().optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const updateServiceSchema = createServiceSchema.partial();
 
 // Portfolio validation schemas
 export const portfolioFormSchema = z.object({
@@ -88,6 +243,35 @@ export const portfolioFormSchema = z.object({
   metaDescription: z.string().max(160, 'Meta description should be less than 160 characters').optional(),
 });
 
+// Portfolio Management Schemas
+export const createPortfolioSchema = z.object({
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(100, 'Title cannot exceed 100 characters'),
+  description: z
+    .string()
+    .min(1, 'Description is required')
+    .max(500, 'Description cannot exceed 500 characters'),
+  content: z
+    .string()
+    .min(1, 'Content is required')
+    .max(5000, 'Content cannot exceed 5000 characters'),
+  slug: z
+    .string()
+    .min(1, 'Slug is required')
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
+  image: z.string().optional(),
+  gallery: z.array(z.string()).optional(),
+  technologies: z.array(z.string()).optional(),
+  clientName: z.string().optional(),
+  projectUrl: z.string().url().optional().or(z.literal('')),
+  completedAt: z.date().optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const updatePortfolioSchema = createPortfolioSchema.partial();
+
 // Career validation schemas
 export const jobFormSchema = z.object({
   title: z.string().min(1, 'Job title is required').max(200, 'Title must be less than 200 characters'),
@@ -113,6 +297,42 @@ export const jobFormSchema = z.object({
   metaDescription: z.string().max(160, 'Meta description should be less than 160 characters').optional(),
 });
 
+// Career Management Schemas
+export const createCareerSchema = z.object({
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(100, 'Title cannot exceed 100 characters'),
+  department: z
+    .string()
+    .min(1, 'Department is required')
+    .max(50, 'Department cannot exceed 50 characters'),
+  location: z
+    .string()
+    .min(1, 'Location is required')
+    .max(100, 'Location cannot exceed 100 characters'),
+  type: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP']),
+  level: z.enum(['ENTRY', 'MID', 'SENIOR', 'LEAD', 'MANAGER']),
+  description: z
+    .string()
+    .min(1, 'Description is required')
+    .max(2000, 'Description cannot exceed 2000 characters'),
+  requirements: z
+    .string()
+    .min(1, 'Requirements are required')
+    .max(2000, 'Requirements cannot exceed 2000 characters'),
+  responsibilities: z
+    .string()
+    .min(1, 'Responsibilities are required')
+    .max(2000, 'Responsibilities cannot exceed 2000 characters'),
+  benefits: z.string().optional(),
+  salaryRange: z.string().optional(),
+  isActive: z.boolean().default(true),
+  expiresAt: z.date().optional(),
+});
+
+export const updateCareerSchema = createCareerSchema.partial();
+
 // Job application validation schema
 export const jobApplicationSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50, 'First name must be less than 50 characters'),
@@ -129,13 +349,6 @@ export const jobApplicationSchema = z.object({
   salaryExpectation: z.number().min(0, 'Salary expectation must be positive').optional(),
   remotePreference: z.enum(['on-site', 'hybrid', 'remote', 'flexible']),
   additionalInfo: z.string().max(1000, 'Additional info must be less than 1000 characters').optional(),
-});
-
-// Admin authentication
-export const adminLoginSchema = z.object({
-  email: emailSchema,
-  password: z.string().min(1, 'Password is required'),
-  remember: z.boolean().optional(),
 });
 
 // File upload validation
@@ -161,10 +374,13 @@ export const searchParamsSchema = z.object({
 
 // Pagination schema
 export const paginationSchema = z.object({
-  page: z.number().min(1),
-  limit: z.number().min(1).max(100),
-  total: z.number().min(0),
-  totalPages: z.number().min(0),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  search: z.string().optional(),
+  total: z.number().min(0).optional(),
+  totalPages: z.number().min(0).optional(),
 });
 
 // API response schemas
@@ -180,6 +396,21 @@ export const apiErrorSchema = z.object({
   message: z.string(),
   statusCode: z.number(),
   details: z.any().optional(),
+});
+
+export const apiSuccessSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+  data: z.any().optional(),
+});
+
+// ID Parameter Schema
+export const idParamSchema = z.object({
+  id: z.string().min(1, 'ID is required'),
+});
+
+export const slugParamSchema = z.object({
+  slug: z.string().min(1, 'Slug is required'),
 });
 
 // Utility functions for validation
@@ -205,6 +436,15 @@ export const sanitizeInput = (input: string): string => {
 };
 
 // Type exports for TypeScript
+export type LoginInput = z.infer<typeof loginSchema>;
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type NewPasswordInput = z.infer<typeof newPasswordSchema>;
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+export type SessionData = z.infer<typeof sessionSchema>;
+export type JwtTokenData = z.infer<typeof jwtTokenSchema>;
 export type ContactFormData = z.infer<typeof contactFormSchema>;
 export type ServiceFormData = z.infer<typeof serviceFormSchema>;
 export type PortfolioFormData = z.infer<typeof portfolioFormSchema>;
@@ -213,6 +453,3 @@ export type JobApplicationData = z.infer<typeof jobApplicationSchema>;
 export type AdminLoginData = z.infer<typeof adminLoginSchema>;
 export type FileUploadData = z.infer<typeof fileUploadSchema>;
 export type SearchParams = z.infer<typeof searchParamsSchema>;
-export type PaginationData = z.infer<typeof paginationSchema>;
-export type ApiResponse = z.infer<typeof apiResponseSchema>;
-export type ApiError = z.infer<typeof apiErrorSchema>;
