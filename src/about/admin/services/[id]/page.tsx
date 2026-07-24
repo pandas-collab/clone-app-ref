@@ -1,73 +1,55 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 
 interface Service {
   id: string;
   title: string;
-  category: string;
   description: string;
-  features: string[];
-  benefits: string[];
-  status: 'active' | 'inactive' | 'draft';
+  category: string;
+  features: string;
+  pricing?: string;
   featured: boolean;
+  active: boolean;
 }
 
 export default function ServiceEditPage() {
-  const { status } = useSession()
-  const params = useParams();
-  const router = useRouter();
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const categories = [
-    'Cloud Platforms',
-    'Data & Analytics',
-    'Enterprise Applications',
-    'Digital Engineering'
-  ];
-
-  React.useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login')
-    }
-  }, [status, router])
+  const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
 
   useEffect(() => {
-    if (params.id) {
-      fetchService(params.id as string);
+    if (id) {
+      fetchService();
     }
-  }, [params.id]);
+  }, [id]);
 
-  const fetchService = async (id: string) => {
+  const fetchService = async () => {
     try {
       setLoading(true);
-      // Mock data for demonstration
-      const mockService: Service = {
-        id,
-        title: 'Cloud Migration Services',
-        category: 'Cloud Platforms',
-        description: 'Seamlessly migrate your applications to the cloud with our expert guidance and proven methodologies.',
-        features: ['Assessment & Planning', 'Migration Strategy', '24/7 Support'],
-        benefits: ['Cost Optimization', 'Scalability', 'Security'],
-        status: 'active',
-        featured: true
-      };
-      setService(mockService);
+      const response = await fetch(`/api/admin/services/${id}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Service not found');
+        }
+        throw new Error('Failed to fetch service');
+      }
+      const data = await response.json();
+      setService(data.service);
     } catch (err) {
-      setError('Failed to fetch service details');
-      console.error('Fetch service error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load service');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!service) return;
 
@@ -75,237 +57,117 @@ export default function ServiceEditPage() {
       setSaving(true);
       setError(null);
 
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch(`/api/admin/services/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(service),
+      });
 
-      router.push('/admin/services');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update service');
+      }
+
+      router.push('/about/admin/services');
     } catch (err) {
-      setError('Failed to save service');
-      console.error('Save service error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update service');
     } finally {
       setSaving(false);
     }
   };
 
-  const updateField = (field: keyof Service, value: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     if (!service) return;
-    setService({ ...service, [field]: value });
+
+    const { name, value, type } = e.target;
+    setService({
+      ...service,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+    });
   };
 
-  const updateArrayField = (field: 'features' | 'benefits', index: number, value: string) => {
-    if (!service) return;
-    const newArray = [...service[field]];
-    newArray[index] = value;
-    setService({ ...service, [field]: newArray });
-  };
-
-  const addArrayItem = (field: 'features' | 'benefits') => {
-    if (!service) return;
-    setService({ ...service, [field]: [...service[field], ''] });
-  };
-
-  const removeArrayItem = (field: 'features' | 'benefits', index: number) => {
-    if (!service) return;
-    const newArray = service[field].filter((_, i) => i !== index);
-    setService({ ...service, [field]: newArray });
-  };
-
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    )
-  }
-
-  if (status === 'unauthenticated') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    )
-  }
-
-  if (error && !service) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading service...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!service) return null;
+  if (error && !service) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="text-center">
+              <div className="text-red-600 text-xl mb-4">Error</div>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Link
+                href="/about/admin/services"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Back to Services
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!service) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="text-center">
+              <p className="text-gray-600 mb-4">Service not found</p>
+              <Link
+                href="/about/admin/services"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Back to Services
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Edit Service</h1>
-          <p className="text-gray-600 mt-2">Update service details</p>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="bg-white shadow-sm rounded-lg p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Service Title
-              </label>
-              <input
-                type="text"
-                value={service.title}
-                onChange={(e) => updateField('title', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
-              </label>
-              <select
-                value={service.category}
-                onChange={(e) => updateField('category', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-                required
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-bold text-gray-900">Edit Service</h1>
+              <Link
+                href="/about/admin/services"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
               >
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
+                Back to Services
+              </Link>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                value={service.status}
-                onChange={(e) => updateField('status', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2"
-                required
-              >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={service.featured}
-                  onChange={(e) => updateField('featured', e.target.checked)}
-                  className="mr-2"
-                />
-                <span className="text-sm font-medium text-gray-700">Featured Service</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
-            <textarea
-              value={service.description}
-              onChange={(e) => updateField('description', e.target.value)}
-              rows={4}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              required
-            />
-          </div>
-
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Features
-            </label>
-            {service.features.map((feature, index) => (
-              <div key={index} className="flex mb-2">
-                <input
-                  type="text"
-                  value={feature}
-                  onChange={(e) => updateArrayField('features', index, e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-md px-3 py-2 mr-2"
-                  placeholder="Enter feature"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeArrayItem('features', index)}
-                  className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600"
-                >
-                  Remove
-                </button>
+            {error && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
               </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => addArrayItem('features')}
-              className="text-indigo-600 hover:text-indigo-800 text-sm"
-            >
-              + Add Feature
-            </button>
-          </div>
+            )}
 
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Benefits
-            </label>
-            {service.benefits.map((benefit, index) => (
-              <div key={index} className="flex mb-2">
-                <input
-                  type="text"
-                  value={benefit}
-                  onChange={(e) => updateArrayField('benefits', index, e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-md px-3 py-2 mr-2"
-                  placeholder="Enter benefit"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeArrayItem('benefits', index)}
-                  className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => addArrayItem('benefits')}
-              className="text-indigo-600 hover:text-indigo-800 text-sm"
-            >
-              + Add Benefit
-            </button>
-          </div>
-
-          <div className="mt-8 flex justify-end space-x-4">
-            <Link
-              href="/admin/services"
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Service'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                    Service Title *
+                  </label>
+                  <input
+echo 'Fix completed successfully'

@@ -1,196 +1,333 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 
 interface Career {
-  id: string
-  title: string
-  department: string
-  location: string
-  type: string
-  experience: string
-  salary: string
-  description: string
-  responsibilities: string[]
-  requirements: string[]
-  benefits: string[]
-  status: 'active' | 'inactive' | 'draft'
-  postedAt: string
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: string;
+  description: string;
+  requirements: string;
+  benefits?: string;
+  salary?: string;
+  active: boolean;
 }
 
-export default function CareerDetailsPage({ params }: { params: { id: string } }) {
-  const { data: session, status } = useSession()
-  const router = useRouter()
-  const [career, setCareer] = useState<Career | null>(null)
-  const [loading, setLoading] = useState(true)
+export default function CareerEditPage() {
+  const [career, setCareer] = useState<Career | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login')
-      return
+    if (id) {
+      fetchCareer();
     }
+  }, [id]);
 
-    if (status === 'authenticated') {
-      loadCareer()
-    }
-  }, [status, router, params.id])
-
-  const loadCareer = async () => {
+  const fetchCareer = async () => {
     try {
-      setLoading(true)
-
-      // Mock career data
-      const mockCareers: Record<string, Career> = {
-        "1": {
-          id: "1",
-          title: "Senior Full Stack Developer",
-          department: "Engineering",
-          location: "Remote / San Francisco, CA",
-          type: "Full-time",
-          experience: "Senior Level",
-          salary: "$120,000 - $180,000",
-          description: "We are seeking a talented Senior Full Stack Developer to join our growing engineering team. You will work on cutting-edge web applications and help shape our technical architecture.",
-          responsibilities: [
-            "Develop and maintain web applications using modern frameworks",
-            "Collaborate with cross-functional teams to define and implement features",
-            "Write clean, maintainable, and well-documented code",
-            "Participate in code reviews and technical discussions",
-            "Mentor junior developers and contribute to team growth"
-          ],
-          requirements: [
-            "5+ years of experience in full-stack development",
-            "Proficiency in React, Node.js, and TypeScript",
-            "Experience with databases (PostgreSQL, MongoDB)",
-            "Knowledge of cloud platforms (AWS, GCP, or Azure)",
-            "Strong problem-solving skills and attention to detail"
-          ],
-          benefits: [
-            "Competitive salary and equity package",
-            "Comprehensive health, dental, and vision insurance",
-            "Flexible working hours and remote work options",
-            "Professional development opportunities",
-            "Modern office with great amenities"
-          ],
-          postedAt: "2024-01-10T00:00:00Z",
-          status: "active"
+      setLoading(true);
+      const response = await fetch(`/api/admin/careers/${id}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Career position not found');
         }
+        throw new Error('Failed to fetch career');
       }
-
-      const careerData = mockCareers[params.id]
-      if (careerData) {
-        setCareer(careerData)
-      }
-    } catch (error) {
-      console.error('Error loading career:', error)
+      const data = await response.json();
+      setCareer(data.career);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load career');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  if (status === 'loading' || loading) {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!career) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const response = await fetch(`/api/admin/careers/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(career),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update career');
+      }
+
+      router.push('/about/admin/careers');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update career');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    if (!career) return;
+
+    const { name, value, type } = e.target;
+    setCareer({
+      ...career,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+    });
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading career details...</p>
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading career...</p>
+          </div>
         </div>
       </div>
-    )
+    );
+  }
+
+  if (error && !career) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="text-center">
+              <div className="text-red-600 text-xl mb-4">Error</div>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Link
+                href="/about/admin/careers"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Back to Careers
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!career) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Career Not Found</h2>
-          <Link
-            href="/admin/careers"
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block"
-          >
-            Back to Careers
-          </Link>
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="text-center">
+              <p className="text-gray-600 mb-4">Career position not found</p>
+              <Link
+                href="/about/admin/careers"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Back to Careers
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link
-          href="/admin/careers"
-          className="text-blue-600 hover:text-blue-800 mb-4 inline-block"
-        >
-          <- Back to Careers
-        </Link>
-
-        <div className="bg-white shadow rounded-lg p-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">{career.title}</h1>
-            <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
-              <span>{career.department}</span>
-              <span></span>
-              <span>{career.location}</span>
-              <span></span>
-              <span>{career.type}</span>
-              <span></span>
-              <span>{career.experience}</span>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Job Description</h2>
-              <p className="text-gray-700">{career.description}</p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Responsibilities</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {career.responsibilities.map((responsibility, index) => (
-                  <li key={index}>{responsibility}</li>
-                ))}
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Requirements</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {career.requirements.map((requirement, index) => (
-                  <li key={index}>{requirement}</li>
-                ))}
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Benefits</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {career.benefits.map((benefit, index) => (
-                  <li key={index}>{benefit}</li>
-                ))}
-              </ul>
-            </section>
-
-            <div className="flex gap-4 pt-6 border-t">
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-bold text-gray-900">Edit Career Position</h1>
               <Link
-                href={`/admin/careers/${career.id}/edit`}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                href="/about/admin/careers"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
               >
-                Edit Position
-              </Link>
-              <Link
-                href={`/admin/careers/${career.id}/delete`}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-              >
-                Delete Position
+                Back to Careers
               </Link>
             </div>
+
+            {error && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                    Job Title *
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={career.title}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
+                    Department *
+                  </label>
+                  <input
+                    type="text"
+                    id="department"
+                    name="department"
+                    value={career.department}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                    Location *
+                  </label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value={career.location}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+                    Employment Type *
+                  </label>
+                  <select
+                    id="type"
+                    name="type"
+                    value={career.type}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Type</option>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                    <option value="Remote">Remote</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label htmlFor="salary" className="block text-sm font-medium text-gray-700 mb-1">
+                    Salary Range
+                  </label>
+                  <input
+                    type="text"
+                    id="salary"
+                    name="salary"
+                    value={career.salary || ''}
+                    onChange={handleChange}
+                    placeholder="e.g., $50,000 - $70,000"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                  Job Description *
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={career.description}
+                  onChange={handleChange}
+                  required
+                  rows={6}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Describe the role, responsibilities, and what the ideal candidate will do..."
+                />
+              </div>
+
+              <div>
+                <label htmlFor="requirements" className="block text-sm font-medium text-gray-700 mb-1">
+                  Requirements *
+                </label>
+                <textarea
+                  id="requirements"
+                  name="requirements"
+                  value={career.requirements}
+                  onChange={handleChange}
+                  required
+                  rows={6}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="List the required skills, experience, education, etc..."
+                />
+              </div>
+
+              <div>
+                <label htmlFor="benefits" className="block text-sm font-medium text-gray-700 mb-1">
+                  Benefits
+                </label>
+                <textarea
+                  id="benefits"
+                  name="benefits"
+                  value={career.benefits || ''}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="List benefits, perks, and what makes this position attractive..."
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="active"
+                    checked={career.active}
+                    onChange={handleChange}
+                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Active (visible to job seekers)</span>
+                </label>
+              </div>
+
+              <div className="pt-6 border-t border-gray-200 flex space-x-4">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Update Position'}
+                </button>
+                <Link
+                  href="/about/admin/careers"
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-md font-medium transition-colors"
+                >
+                  Cancel
+                </Link>
+              </div>
+            </form>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
