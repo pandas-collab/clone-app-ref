@@ -201,65 +201,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 // DELETE /api/portfolio/[id] - Delete portfolio item
-
-
-// Update portfolio item
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const id = params.id;
-    const body = await request.json();
-
-    // Validate required fields
-    const {
-      title,
-      description,
-      category,
-      technologies,
-      images,
-      clientName,
-      projectUrl,
-      githubUrl,
-      featured,
-      caseStudy,
-      testimonial
-    } = body;
-
-    if (!title || !description || !category) {
-      return NextResponse.json(
-        { error: 'Missing required fields: title, description, category' },
-        { status: 400 }
-      );
-    }
-
-    // Update portfolio item in database (placeholder - replace with actual DB logic)
-    const updatedPortfolio = {
-      id,
-      title,
-      description,
-      category,
-      technologies: technologies || [],
-      images: images || [],
-      clientName: clientName || null,
-      projectUrl: projectUrl || null,
-      githubUrl: githubUrl || null,
-      featured: featured || false,
-      caseStudy: caseStudy || null,
-      testimonial: testimonial || null,
-      updatedAt: new Date().toISOString()
-    };
-
-    return NextResponse.json(updatedPortfolio);
-  } catch (error) {
-    console.error('Error updating portfolio:', error);
-    return NextResponse.json(
-      { error: 'Failed to update portfolio item' },
-      { status: 500 }
-    );
-  }
-}
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await getServerSession(authOptions);

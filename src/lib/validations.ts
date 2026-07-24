@@ -32,38 +32,33 @@ export const slugSchema = z
 
 export const statusSchema = z.enum(['active', 'inactive', 'pending', 'draft']);
 
-// Contact form validation
-export const contactFormSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Name is required')
-    .min(2, 'Name must be at least 2 characters')
-    .max(100, 'Name must be less than 100 characters'),
+// Authentication schemas
+export const loginSchema = z.object({
   email: emailSchema,
-  phone: phoneSchema,
-  company: z
+  password: z
     .string()
-    .max(100, 'Company name must be less than 100 characters')
-    .optional(),
-  message: z
-    .string()
-    .min(1, 'Message is required')
-    .min(10, 'Message must be at least 10 characters')
-    .max(1000, 'Message must be less than 1000 characters'),
-  subject: z
-    .string()
-    .min(1, 'Subject is required')
-    .max(200, 'Subject must be less than 200 characters'),
-  source: z
-    .enum(['website', 'referral', 'social', 'other'])
-    .optional(),
-  priority: z
-    .enum(['low', 'medium', 'high'])
-    .default('medium')
-    .optional()
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters')
 });
 
-export const contactSchema = contactFormSchema;
+export const registerSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: emailSchema,
+  password: passwordSchema,
+});
+
+// Service schemas
+export const serviceSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().min(1, "Description is required"),
+  content: z.string().optional(),
+  image: z.string().url().optional(),
+  featured: z.boolean().optional().default(false),
+  published: z.boolean().optional().default(true),
+});
+
+export const serviceCreateSchema = serviceSchema.omit({ slug: true });
 
 // Service inquiry form validation
 export const serviceFormSchema = z.object({
@@ -101,7 +96,16 @@ export const serviceFormSchema = z.object({
     .optional()
 });
 
-export const serviceSchema = serviceFormSchema;
+// Portfolio schemas
+export const portfolioSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  slug: z.string().min(1, "Slug is required"),
+  description: z.string().min(1, "Description is required"),
+  content: z.string().optional(),
+  image: z.string().url().optional(),
+  featured: z.boolean().optional().default(false),
+  published: z.boolean().optional().default(true),
+});
 
 // Portfolio submission validation
 export const portfolioFormSchema = z.object({
@@ -134,20 +138,6 @@ export const portfolioFormSchema = z.object({
     .optional()
 });
 
-// Portfolio schemas (integration branch version)
-export const portfolioSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  category: z.string().min(1, 'Category is required'),
-  slug: z.string().min(1, 'Slug is required'),
-  client: z.string().optional(),
-  featured: z.boolean().default(false),
-  published: z.boolean().default(false),
-  images: z.array(z.string()).default([]),
-  projectUrl: z.string().url().optional().or(z.literal('')),
-  githubUrl: z.string().url().optional().or(z.literal('')),
-});
-
 export const caseStudySchema = z.object({
   technologies: z.array(z.string()),
   metrics: z.array(z.object({
@@ -161,6 +151,16 @@ export const testimonialSchema = z.object({
   content: z.string().min(1, 'Content is required'),
   rating: z.number().min(1).max(5).optional(),
   featured: z.boolean().default(false),
+});
+
+// Career schemas
+export const careerSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  content: z.string().optional(),
+  location: z.string().min(1, "Location is required"),
+  type: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "FREELANCE"]),
+  published: z.boolean().optional().default(true),
 });
 
 // Career/Job posting validation
@@ -233,7 +233,53 @@ export const careerFormSchema = z.object({
   }
 );
 
-export const careerSchema = careerFormSchema;
+// Contact form schema
+export const contactSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  subject: z.string().min(1, "Subject is required"),
+  message: z.string().min(1, "Message is required"),
+});
+
+// Contact form validation
+export const contactFormSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must be less than 100 characters'),
+  email: emailSchema,
+  phone: phoneSchema,
+  company: z
+    .string()
+    .max(100, 'Company name must be less than 100 characters')
+    .optional(),
+  message: z
+    .string()
+    .min(1, 'Message is required')
+    .min(10, 'Message must be at least 10 characters')
+    .max(1000, 'Message must be less than 1000 characters'),
+  subject: z
+    .string()
+    .min(1, 'Subject is required')
+    .max(200, 'Subject must be less than 200 characters'),
+  source: z
+    .enum(['website', 'referral', 'social', 'other'])
+    .optional(),
+  priority: z
+    .enum(['low', 'medium', 'high'])
+    .default('medium')
+    .optional()
+});
+
+// Application schema
+export const applicationSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().optional(),
+  coverLetter: z.string().min(1, "Cover letter is required"),
+  resume: z.string().url("Resume URL is required"),
+});
 
 // Job application form validation
 export const jobApplicationFormSchema = z.object({
@@ -309,59 +355,11 @@ export const userSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
 });
 
-// Authentication schemas
-export const loginSchema = z.object({
-  email: emailSchema,
-  password: z
-    .string()
-    .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters')
-});
-
-export const registerSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: emailSchema,
-  password: passwordSchema,
-});
-
-// Reset password schema
-export const resetPasswordSchema = z.object({
-  email: emailSchema,
-});
-
-// Change password schema
-export const changePasswordSchema = z.object({
-  currentPassword: z.string().optional(),
-  newPassword: passwordSchema.optional(),
-  confirmNewPassword: z.string().optional(),
-}).refine((data) => {
-  if (data.newPassword) {
-    if (!data.currentPassword) {
-      return false;
-    }
-    if (data.newPassword !== data.confirmNewPassword) {
-      return false;
-    }
-    return passwordSchema.safeParse(data.newPassword).success;
-  }
-  return true;
-}, {
-  message: 'Password validation failed',
-  path: ['newPassword'],
-});
-
-// Admin user schema
-export const adminUserSchema = z.object({
-  email: emailSchema,
-  name: z.string().min(1, "Name is required"),
-  role: z.enum(["admin", "user"]).default("user"),
-  password: passwordSchema.optional(),
-});
-
-// Type exports
 export type LoginInput = z.infer<typeof loginSchema>;
-export type RegisterInput = z.infer<typeof registerSchema>;
-export type UserInput = z.infer<typeof userSchema>;
+export type ServiceInput = z.infer<typeof serviceSchema>;
+export type ServiceCreateInput = z.infer<typeof serviceCreateSchema>;
 export type PortfolioInput = z.infer<typeof portfolioSchema>;
-export type CaseStudyInput = z.infer<typeof caseStudySchema>;
-export type TestimonialInput = z.infer<typeof testimonialSchema>;
+export type CareerInput = z.infer<typeof careerSchema>;
+export type ContactInput = z.infer<typeof contactSchema>;
+export type ApplicationInput = z.infer<typeof applicationSchema>;
+export type UserInput = z.infer<typeof userSchema>;

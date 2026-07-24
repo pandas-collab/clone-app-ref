@@ -5,6 +5,7 @@ import { NextAuth } from 'next-auth';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from './db';
 import { CustomUser, CustomSession, CustomJWT } from '../types/auth';
+import { getServerSession } from "next-auth"
 
 declare module 'next-auth' {
   interface Session {
@@ -201,6 +202,23 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 }
 
+export async function getAuthSession() {
+  const session = await getServerSession(authOptions)
+
+  if (!session || !session.user) {
+    return null
+  }
+
+  return {
+    ...session,
+    user: {
+      ...session.user,
+      id: (session.user as any).id,
+      role: (session.user as any).role,
+    }
+  }
+}
+
 export const getServerAuthSession = async () => {
   return await NextAuth(authOptions).getServerSession()
 }
@@ -219,11 +237,15 @@ export const requireAuth = async (): Promise<CustomSession> => {
   return session
 }
 
-export const requireAdminAuth = async (): Promise<CustomSession> => {
-  const session = await requireAuth()
+export async function requireAdminAuth() {
+  const session = await getAuthSession()
 
-  if (session.user.role !== 'ADMIN') {
-    throw new Error('Admin access required')
+  if (!session) {
+    throw new Error("Authentication required")
+  }
+
+  if (session.user.role !== "ADMIN") {
+    throw new Error("Admin access required")
   }
 
   return session

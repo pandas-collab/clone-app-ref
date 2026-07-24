@@ -1,8 +1,5 @@
 import React from 'react';
 
-
-
-// Ensure default export exists
 export default function Page() {
   return (
     <div>

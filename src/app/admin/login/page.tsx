@@ -308,7 +308,7 @@ export default function AdminLoginPage() {
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                   </svg>
                 </button>
               </div>
@@ -317,15 +317,15 @@ export default function AdminLoginPage() {
                 <div className="text-center">
                   <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
                     <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                   </div>
-                  <p className="text-sm text-gray-600">
-                    Password reset instructions have been sent to your email address.
+                  <p className="text-sm text-gray-600 mb-4">
+                    Reset instructions have been sent to your email address.
                   </p>
                   <button
                     onClick={closeForgotPasswordModal}
-                    className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
                   >
                     Close
                   </button>
@@ -333,25 +333,29 @@ export default function AdminLoginPage() {
               ) : (
                 <form onSubmit={handleForgotPassword}>
                   <p className="text-sm text-gray-600 mb-4">
-                    Enter your email address and we'll send you instructions to reset your password.
+                    Enter your email address and we'll send you a link to reset your password.
                   </p>
                   
-                  {errors.forgotPassword && (
-                    <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-md text-sm mb-4">
-                      {errors.forgotPassword}
-                    </div>
-                  )}
+                  <div className="mb-4">
+                    <label htmlFor="forgotPasswordEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <input
+                      id="forgotPasswordEmail"
+                      type="email"
+                      className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        errors.forgotPassword ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter your email"
+                      value={forgotPasswordEmail}
+                      onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                      disabled={isLoading}
+                    />
+                    {errors.forgotPassword && (
+                      <p className="mt-1 text-sm text-red-600">{errors.forgotPassword}</p>
+                    )}
+                  </div>
 
-                  <input
-                    type="email"
-                    placeholder="Enter your email address"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-                    value={forgotPasswordEmail}
-                    onChange={(e) => setForgotPasswordEmail(e.target.value)}
-                    disabled={isLoading}
-                    required
-                  />
-                  
                   <div className="flex space-x-3">
                     <button
                       type="button"
@@ -366,7 +370,7 @@ export default function AdminLoginPage() {
                       className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Sending...' : 'Send Reset Email'}
+                      {isLoading ? 'Sending...' : 'Send Reset Link'}
                     </button>
                   </div>
                 </form>

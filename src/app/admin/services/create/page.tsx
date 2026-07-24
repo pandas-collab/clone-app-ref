@@ -1,4 +1,16 @@
-if (isSubmitting) return;
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ServiceForm } from '@/components/forms/ServiceForm';
+
+export default function CreateServicePage() {
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (formData: any) => {
+    if (isSubmitting) return;
     
     setIsSubmitting(true);
     setError(null);
@@ -102,28 +114,6 @@ if (isSubmitting) return;
           />
         </div>
       </div>
-    </div>
-  );
-}
-'use client';
-
-import { ServiceForm } from '@/components/forms/ServiceForm';
-
-export default function CreateServicePage() {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Create New Service</h1>
-      <ServiceForm />
-import React from 'react';
-
-
-
-// Ensure default export exists
-export default function Page() {
-  return (
-    <div>
-      <h1>Coming Soon</h1>
-      <p>This page is under development.</p>
     </div>
   );
 }
