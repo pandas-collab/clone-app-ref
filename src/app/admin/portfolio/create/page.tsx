@@ -1,142 +1,112 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { PortfolioForm } from '@/components/forms/PortfolioForm';
 
-export default function CreatePortfolioPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  const initialData = {
+export default function CreatePortfolio() {
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
     client: '',
-    technologies: [],
-    status: 'draft' as const,
-    featured: false,
-    projectUrl: '',
-    repositoryUrl: '',
-    completedAt: null,
-    images: []
+    status: 'in-progress'
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Creating portfolio item:', formData);
   };
 
-  const handleSubmit = async (data: any, saveAndContinue = false) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/admin/portfolio', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create portfolio item');
-      }
-
-      const result = await response.json();
-
-      if (saveAndContinue) {
-        // Stay on the form but redirect to edit mode
-        router.push(`/admin/portfolio/${result.id}`);
-      } else {
-        // Return to portfolio list
-        router.push('/admin/portfolio');
-      }
-    } catch (err) {
-      console.error('Error creating portfolio item:', err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancel = () => {
-    router.push('/admin/portfolio');
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumbs */}
-      <nav className="mb-8">
-        <ol className="flex items-center space-x-2 text-sm text-gray-600">
-          <li>
-            <button
-              onClick={() => router.push('/admin')}
-              className="hover:text-blue-600 transition-colors"
-            >
-              Admin
-            </button>
-          </li>
-          <li className="before:content-['/'] before:mx-2">
-            <button
-              onClick={() => router.push('/admin/portfolio')}
-              className="hover:text-blue-600 transition-colors"
-            >
-              Portfolio
-            </button>
-          </li>
-          <li className="before:content-['/'] before:mx-2 text-gray-900">
-            Create New
-          </li>
-        </ol>
-      </nav>
+    <div className="min-h-screen bg-gray-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Create New Portfolio Item</h1>
 
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Create New Portfolio Item
-        </h1>
-        <p className="text-gray-600">
-          Add a new case study to showcase your work and client success stories.
-        </p>
-      </div>
+          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-6">
+            <div className="mb-6">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                Project Title
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
+            <div className="mb-6">
+              <label htmlFor="client" className="block text-sm font-medium text-gray-700 mb-2">
+                Client Name
+              </label>
+              <input
+                type="text"
+                id="client"
+                name="client"
+                value={formData.client}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="on-hold">On Hold</option>
+              </select>
             </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
-                Error creating portfolio item
-              </h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Form Card */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6">
-          <PortfolioForm
-            initialData={initialData}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            isLoading={isLoading}
-            mode="create"
-          />
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Create Project
+              </button>
+              <a
+                href="/admin/portfolio"
+                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
+              </a>
+            </div>
+          </form>
         </div>
       </div>
     </div>

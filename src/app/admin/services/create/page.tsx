@@ -1,117 +1,113 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ServiceForm } from '@/components/forms/ServiceForm';
+import React, { useState } from 'react';
 
-export default function CreateServicePage() {
-  const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export default function CreateService() {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: '',
+    isPublished: false
+  });
 
-  const handleSubmit = async (formData: any) => {
-    if (isSubmitting) return;
-    
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/services', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create service');
-      }
-
-      const result = await response.json();
-      
-      // Redirect to services list or the created service
-      if (formData.action === 'save_continue') {
-        router.push(`/admin/services/${result.id}`);
-      } else {
-        router.push('/admin/services');
-      }
-    } catch (err) {
-      console.error('Error creating service:', err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Creating service:', formData);
   };
 
-  const handleCancel = () => {
-    router.push('/admin/services');
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    }));
   };
 
   return (
-    <div className="container mx-auto px-6 py-8">
-      <div className="mb-8">
-        <nav className="flex" aria-label="Breadcrumb">
-          <ol className="inline-flex items-center space-x-1 md:space-x-3">
-            <li className="inline-flex items-center">
-              <a href="/admin" className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
-                Admin
+    <div className="min-h-screen bg-gray-100">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Create New Service</h1>
+
+          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-6">
+            <div className="mb-6">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                Service Title
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                Category
+              </label>
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="">Select Category</option>
+                <option value="Cloud Platforms">Cloud Platforms</option>
+                <option value="Data & Analytics">Data & Analytics</option>
+                <option value="Enterprise Applications">Enterprise Applications</option>
+                <option value="Digital Engineering">Digital Engineering</option>
+              </select>
+            </div>
+
+            <div className="mb-6">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="isPublished"
+                  checked={formData.isPublished}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">Publish immediately</span>
+              </label>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Create Service
+              </button>
+              <a
+                href="/admin/services"
+                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancel
               </a>
-            </li>
-            <li>
-              <div className="flex items-center">
-                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-                <a href="/admin/services" className="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2">
-                  Services
-                </a>
-              </div>
-            </li>
-            <li>
-              <div className="flex items-center">
-                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-                <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2">Create</span>
-              </div>
-            </li>
-          </ol>
-        </nav>
-        
-        <div className="mt-4">
-          <h1 className="text-3xl font-bold text-gray-900">Create New Service</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Add a new service to your website. Fill in all required fields and configure the service details.
-          </p>
-        </div>
-      </div>
-
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium">Error creating service</p>
-              <p className="mt-1 text-sm">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
-        <div className="px-6 py-6">
-          <ServiceForm
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-            mode="create"
-          />
+          </form>
         </div>
       </div>
     </div>

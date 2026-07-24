@@ -85,22 +85,6 @@ export default function ServicesPage() {
                           </h3>
 
                           <p className="text-gray-600 mb-4 line-clamp-3">
-                  <p className="text-gray-600 mb-4">
-                    {service.description}
-                  </p>
-
-                  {/* Key Benefits */}
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-gray-900 mb-2">Key Benefits:</h4>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      {service.benefits?.map((benefit, index) => (
-                        <li key={index} className="flex items-start">
-                          <span className="text-blue-600 mr-2"></span>
-                          {benefit}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                             {service.description}
                           </p>
 

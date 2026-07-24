@@ -127,7 +127,6 @@ export const featuredServices = [
     id: '1',
     title: 'Cloud Platforms',
     description: 'Comprehensive cloud migration, architecture design, and optimization services for AWS, Azure, and Google Cloud Platform.',
-  benefits: ["Improved efficiency", "Cost reduction", "Enhanced security"],
     icon: '',
     slug: 'cloud-platforms',
     featured: true
@@ -136,7 +135,6 @@ export const featuredServices = [
     id: '2',
     title: 'Data & Analytics',
     description: 'Advanced data engineering, business intelligence, machine learning, and AI solutions to unlock insights from your data.',
-  benefits: ["Improved efficiency", "Cost reduction", "Enhanced security"],
     icon: '',
     slug: 'data-analytics',
     featured: true
@@ -145,7 +143,6 @@ export const featuredServices = [
     id: '3',
     title: 'Enterprise Applications',
     description: 'Custom enterprise software development, ERP implementations, CRM solutions, and application modernization.',
-  benefits: ["Improved efficiency", "Cost reduction", "Enhanced security"],
     icon: '',
     slug: 'enterprise-applications',
     featured: true
@@ -154,7 +151,6 @@ export const featuredServices = [
     id: '4',
     title: 'Digital Engineering',
     description: 'Full-stack development, DevOps, microservices architecture, and modern application development practices.',
-  benefits: ["Improved efficiency", "Cost reduction", "Enhanced security"],
     icon: '',
     slug: 'digital-engineering',
     featured: true
