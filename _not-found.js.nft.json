@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "files": [
+    "_not-found.js"
+  ],
+  "traceReasons": {
+    "_not-found.js": {
+      "type": "dependency",
+      "parents": []
+    }
+  }
+}

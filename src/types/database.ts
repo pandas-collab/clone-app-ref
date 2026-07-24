@@ -1,60 +1,93 @@
-// Lead and contact form related types
-
-export interface ContactSubmission {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  company?: string
-  message: string
-  source: string
-  status: LeadStatus
-  score: number
-  createdAt: Date
-  updatedAt: Date
+export interface Service {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  slug: string;
+  image?: string;
+  featured: boolean;
+  status: 'draft' | 'published' | 'archived';
+  metadata?: {
+    seoTitle?: string;
+    seoDescription?: string;
+    keywords?: string[];
+    author?: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export enum LeadStatus {
-  NEW = 'new',
-  CONTACTED = 'contacted',
-  QUALIFIED = 'qualified',
-  CONVERTED = 'converted',
-  CLOSED = 'closed'
+export interface CreateServiceInput {
+  title: string;
+  description: string;
+  content: string;
+  slug?: string;
+  image?: string;
+  featured?: boolean;
+  status?: 'draft' | 'published';
+  metadata?: {
+    seoTitle?: string;
+    seoDescription?: string;
+    keywords?: string[];
+    author?: string;
+  };
 }
 
-export interface LeadScore {
-  id: string
-  leadId: string
-  score: number
-  factors: ScoreFactor[]
-  calculatedAt: Date
+export interface UpdateServiceInput {
+  title?: string;
+  description?: string;
+  content?: string;
+  slug?: string;
+  image?: string;
+  featured?: boolean;
+  status?: 'draft' | 'published' | 'archived';
+  metadata?: {
+    seoTitle?: string;
+    seoDescription?: string;
+    keywords?: string[];
+    author?: string;
+  };
 }
 
-export interface ScoreFactor {
-  name: string
-  value: number
-  weight: number
+export interface ServiceFilters {
+  status?: 'draft' | 'published' | 'archived';
+  featured?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
+  sortBy?: 'createdAt' | 'updatedAt' | 'title';
+  sortOrder?: 'asc' | 'desc';
 }
 
-export interface EmailNotification {
-  id: string
-  leadId: string
-  type: NotificationType
-  recipient: string
-  subject: string
-  body: string
-  sentAt: Date
-  status: EmailStatus
+export interface ServiceResponse {
+  services: Service[];
+  total: number;
+  hasMore: boolean;
 }
 
-export enum NotificationType {
-  LEAD_CREATED = 'lead_created',
-  LEAD_UPDATED = 'lead_updated',
-  FOLLOW_UP = 'follow_up'
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    message: string;
+    code?: string;
+    details?: any;
+  };
+  timestamp: string;
 }
 
-export enum EmailStatus {
-  PENDING = 'pending',
-  SENT = 'sent',
-  FAILED = 'failed'
+export interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
+}
+
+export interface ServiceValidationErrors {
+  title?: ValidationError[];
+  description?: ValidationError[];
+  content?: ValidationError[];
+  slug?: ValidationError[];
+  image?: ValidationError[];
+  status?: ValidationError[];
+  metadata?: ValidationError[];
 }
