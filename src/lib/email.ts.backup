@@ -1,0 +1,71 @@
+// Email utilities for contact form and lead management
+
+export interface EmailConfig {
+  host: string
+  port: number
+  secure: boolean
+  auth: {
+    user: string
+    pass: string
+  }
+}
+
+export interface EmailMessage {
+  to: string
+  from: string
+  subject: string
+  html: string
+  text?: string
+}
+
+export class EmailService {
+  private config: EmailConfig
+
+  constructor(config: EmailConfig) {
+    this.config = config
+  }
+
+  async sendEmail(message: EmailMessage): Promise<boolean> {
+    try {
+      // TODO: Implement actual email sending
+      console.log('Sending email:', message.subject, 'to', message.to)
+      return true
+    } catch (error) {
+      console.error('Failed to send email:', error)
+      return false
+    }
+  }
+
+  async sendContactNotification(contactData: {
+    name: string
+    email: string
+    message: string
+  }): Promise<boolean> {
+    const message: EmailMessage = {
+      to: process.env.ADMIN_EMAIL || 'admin@example.com',
+      from: process.env.FROM_EMAIL || 'noreply@example.com',
+      subject: `New Contact Form Submission from ${contactData.name}`,
+      html: `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${contactData.name}</p>
+        <p><strong>Email:</strong> ${contactData.email}</p>
+        <p><strong>Message:</strong></p>
+        <p>${contactData.message}</p>
+      `,
+      text: `New Contact Form Submission from ${contactData.name}\nEmail: ${contactData.email}\nMessage: ${contactData.message}`
+    }
+
+    return await this.sendEmail(message)
+  }
+}
+
+// Default email service instance
+export const emailService = new EmailService({
+  host: process.env.SMTP_HOST || 'localhost',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || ''
+  }
+})
