@@ -2,10 +2,42 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { compare } from 'bcryptjs';
 import { NextAuth } from 'next-auth';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from './db';
 import { CustomUser, CustomSession, CustomJWT } from '../types/auth';
 
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      name?: string;
+      role: string;
+      isActive: boolean;
+      image?: string;
+    };
+  }
+
+  interface User {
+    id: string;
+    email: string;
+    name?: string;
+    role: string;
+    isActive: boolean;
+    image?: string;
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    role: string;
+    isActive: boolean;
+  }
+}
+
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -33,7 +65,7 @@ export const authOptions: NextAuthOptions = {
             throw new Error('Account is deactivated')
           }
 
-          const isPasswordValid = await compare(credentials.password, user.password)
+          const isPasswordValid = await compare(credentials.password, user.password || '')
 
           if (!isPasswordValid) {
             throw new Error('Invalid credentials')
@@ -42,8 +74,10 @@ export const authOptions: NextAuthOptions = {
           return {
             id: user.id,
             email: user.email,
+            name: user.name,
             role: user.role,
-            isActive: user.isActive
+            isActive: user.isActive,
+            image: user.image,
           } as CustomUser
 
         } catch (error) {
@@ -90,8 +124,10 @@ export const authOptions: NextAuthOptions = {
             select: {
               id: true,
               email: true,
+              name: true,
               role: true,
-              isActive: true
+              isActive: true,
+              image: true
             }
           })
 
@@ -120,8 +156,10 @@ export const authOptions: NextAuthOptions = {
           user: {
             id: customToken.id,
             email: customToken.email as string,
+            name: session.user.name,
             role: customToken.role,
-            isActive: customToken.isActive
+            isActive: customToken.isActive,
+            image: session.user.image
           }
         }
         return customSession

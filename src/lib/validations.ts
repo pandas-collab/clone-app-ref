@@ -134,7 +134,34 @@ export const portfolioFormSchema = z.object({
     .optional()
 });
 
-export const portfolioSchema = portfolioFormSchema;
+// Portfolio schemas (integration branch version)
+export const portfolioSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().min(1, 'Description is required'),
+  category: z.string().min(1, 'Category is required'),
+  slug: z.string().min(1, 'Slug is required'),
+  client: z.string().optional(),
+  featured: z.boolean().default(false),
+  published: z.boolean().default(false),
+  images: z.array(z.string()).default([]),
+  projectUrl: z.string().url().optional().or(z.literal('')),
+  githubUrl: z.string().url().optional().or(z.literal('')),
+});
+
+export const caseStudySchema = z.object({
+  technologies: z.array(z.string()),
+  metrics: z.array(z.object({
+    name: z.string(),
+    value: z.string(),
+  })).optional(),
+});
+
+export const testimonialSchema = z.object({
+  clientName: z.string().min(1, 'Client name is required'),
+  content: z.string().min(1, 'Content is required'),
+  rating: z.number().min(1).max(5).optional(),
+  featured: z.boolean().default(false),
+});
 
 // Career/Job posting validation
 export const careerFormSchema = z.object({
@@ -282,7 +309,7 @@ export const userSchema = z.object({
   name: z.string().min(1, "Name is required").optional(),
 });
 
-// Admin login validation
+// Authentication schemas
 export const loginSchema = z.object({
   email: emailSchema,
   password: z
@@ -291,11 +318,10 @@ export const loginSchema = z.object({
     .min(8, 'Password must be at least 8 characters')
 });
 
-// Register schema
 export const registerSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
   email: emailSchema,
   password: passwordSchema,
-  name: z.string().min(1, "Name is required").optional(),
 });
 
 // Reset password schema
@@ -332,161 +358,10 @@ export const adminUserSchema = z.object({
   password: passwordSchema.optional(),
 });
 
-// Update profile schema
-export const updateProfileSchema = z.object({
-  name: z.string().min(1, "Name is required").optional(),
-  email: emailSchema.optional(),
-  currentPassword: z.string().optional(),
-  newPassword: passwordSchema.optional(),
-  confirmNewPassword: z.string().optional(),
-}).refine((data) => {
-  if (data.newPassword) {
-    if (!data.currentPassword) {
-      return false;
-    }
-    if (data.newPassword !== data.confirmNewPassword) {
-      return false;
-    }
-    return passwordSchema.safeParse(data.newPassword).success;
-  }
-  return true;
-}, {
-  message: 'Password validation failed',
-  path: ['newPassword'],
-});
-
-// Legacy login schema validation functions
-export const loginSchemaValidation = {
-  email: (value: string) => {
-    if (!value) return 'Email is required';
-    if (!validateEmail(value)) return 'Invalid email format';
-    return null;
-  },
-  password: (value: string) => {
-    if (!value) return 'Password is required';
-    if (!validatePassword(value)) return 'Password must be at least 8 characters';
-    return null;
-  }
-};
-
-// File upload validation
-export const fileUploadSchema = z.object({
-  file: z
-    .instanceof(File, { message: 'Please select a file' })
-    .refine((file) => file.size <= 10 * 1024 * 1024, 'File size must be less than 10MB')
-    .refine(
-      (file) => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type),
-      'File must be an image (JPEG, PNG, WebP) or PDF'
-    ),
-  folder: z
-    .string()
-    .min(1, 'Folder is required')
-    .max(50, 'Folder name must be less than 50 characters')
-    .regex(/^[a-z0-9-_]+$/, 'Folder name can only contain lowercase letters, numbers, hyphens, and underscores')
-});
-
-// Image upload specific validation
-export const imageUploadSchema = z.object({
-  file: z
-    .instanceof(File, { message: 'Please select an image' })
-    .refine((file) => file.size <= 5 * 1024 * 1024, 'Image size must be less than 5MB')
-    .refine(
-      (file) => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type),
-      'File must be an image (JPEG, PNG, or WebP)'
-    ),
-  folder: z
-    .string()
-    .min(1, 'Folder is required')
-    .max(50, 'Folder name must be less than 50 characters')
-    .regex(/^[a-z0-9-_]+$/, 'Folder name can only contain lowercase letters, numbers, hyphens, and underscores')
-});
-
-// Search and filter validation schemas
-export const searchParamsSchema = z.object({
-  q: z.string().optional(),
-  category: z.string().optional(),
-  sort: z.enum(['newest', 'oldest', 'title', 'updated']).optional().default('newest'),
-  page: z.coerce.number().min(1).optional().default(1),
-  limit: z.coerce.number().min(1).max(100).optional().default(10),
-});
-
-export const portfolioFilterSchema = searchParamsSchema.extend({
-  technology: z.string().optional(),
-  featured: z.coerce.boolean().optional(),
-});
-
-export const careerFilterSchema = searchParamsSchema.extend({
-  department: z.string().optional(),
-  type: z.enum(['full-time', 'part-time', 'contract', 'internship']).optional(),
-  level: z.enum(['entry', 'mid', 'senior', 'lead', 'executive']).optional(),
-  location: z.string().optional(),
-});
-
-// API validation schemas
-export const idParamSchema = z.object({
-  id: z.string().min(1, 'ID is required'),
-});
-
-export const slugParamSchema = z.object({
-  slug: slugSchema,
-});
-
 // Type exports
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
-export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
-export type ServiceInput = z.infer<typeof serviceSchema>;
+export type UserInput = z.infer<typeof userSchema>;
 export type PortfolioInput = z.infer<typeof portfolioSchema>;
-export type CareerInput = z.infer<typeof careerSchema>;
-export type JobApplicationInput = z.infer<typeof jobApplicationSchema>;
-export type ContactInput = z.infer<typeof contactSchema>;
-export type FileUploadInput = z.infer<typeof fileUploadSchema>;
-export type ImageUploadInput = z.infer<typeof imageUploadSchema>;
-export type AdminUserInput = z.infer<typeof adminUserSchema>;
-export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
-export type SearchParams = z.infer<typeof searchParamsSchema>;
-export type PortfolioFilter = z.infer<typeof portfolioFilterSchema>;
-export type CareerFilter = z.infer<typeof careerFilterSchema>;
-export type IdParam = z.infer<typeof idParamSchema>;
-export type SlugParam = z.infer<typeof slugParamSchema>;
-
-// Utility functions - keep both sets to preserve all behavior
-export const validateSlug = (slug: string): boolean => {
-  return slugSchema.safeParse(slug).success;
-};
-
-export const validateUrl = (url: string): boolean => {
-  return urlSchema.safeParse(url).success;
-};
-
-export const sanitizeSearchQuery = (query: string): string => {
-  return query.trim().toLowerCase().replace(/[^\w\s-]/g, '');
-};
-
-export const formatValidationError = (error: z.ZodError): Record<string, string> => {
-  const formattedErrors: Record<string, string> = {};
-  
-  error.errors.forEach((err) => {
-    const path = err.path.join('.');
-    formattedErrors[path] = err.message;
-  });
-  
-  return formattedErrors;
-};
-
-export const validateFormData = <T>(
-  schema: z.ZodSchema<T>,
-  data: unknown
-): { success: true; data: T } | { success: false; errors: Record<string, string> } => {
-  const result = schema.safeParse(data);
-  
-  if (result.success) {
-    return { success: true, data: result.data };
-  }
-  
-  return {
-    success: false,
-    errors: formatValidationError(result.error),
-  };
-};
+export type CaseStudyInput = z.infer<typeof caseStudySchema>;
+export type TestimonialInput = z.infer<typeof testimonialSchema>;

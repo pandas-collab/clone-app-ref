@@ -1,4 +1,55 @@
-if (!formData.email) {
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { signIn, getSession, signOut } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+
+interface FormData {
+  email: string;
+  password: string;
+  rememberMe: boolean;
+}
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  general?: string;
+  forgotPassword?: string;
+}
+
+export default function AdminLoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
+
+  const [formData, setFormData] = useState<FormData>({
+    email: '',
+    password: '',
+    rememberMe: false
+  });
+
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+
+  useEffect(() => {
+    // Check if user is already authenticated
+    const checkAuth = async () => {
+      const session = await getSession();
+      if (session?.user?.role && ['admin', 'editor'].includes(session.user.role)) {
+        router.push(callbackUrl);
+      }
+    };
+    checkAuth();
+  }, [router, callbackUrl]);
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.email) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
@@ -293,19 +344,19 @@ if (!formData.email) {
 
                   <input
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder="Enter your email address"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
                     value={forgotPasswordEmail}
                     onChange={(e) => setForgotPasswordEmail(e.target.value)}
                     disabled={isLoading}
                     required
                   />
-
+                  
                   <div className="flex space-x-3">
                     <button
                       type="button"
                       onClick={closeForgotPasswordModal}
-                      className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300"
+                      className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
                       disabled={isLoading}
                     >
                       Cancel
@@ -325,5 +376,5 @@ if (!formData.email) {
         </div>
       )}
     </div>
-  )
+  );
 }

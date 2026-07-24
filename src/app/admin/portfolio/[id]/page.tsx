@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { PortfolioForm } from '@/components/forms/PortfolioForm';
 
 export default function EditPortfolioPage({ params }: { params: { id: string } }) {

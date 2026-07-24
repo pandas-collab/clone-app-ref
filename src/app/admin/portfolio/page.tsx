@@ -324,126 +324,157 @@ export default function PortfolioPage() {
 
         {/* Bulk Actions */}
         {selectedItems.length > 0 && (
-          <div className="bg-white p-4 rounded-lg shadow mb-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-700">
-                {selectedItems.length} item(s) selected
-              </span>
-              <div className="flex space-x-2">
-                <Button
-                  size="sm"
+              <div className="flex items-center">
+                <span className="text-sm font-medium text-blue-800">
+                  {selectedItems.length} item(s) selected
+                </span>
+              </div>
+              <div className="flex space-x-3">
+                <button
                   onClick={() => handleBulkStatusUpdate('published')}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200"
                 >
                   Publish Selected
-                </Button>
-                <Button
-                  size="sm"
+                </button>
+                <button
                   onClick={() => handleBulkStatusUpdate('draft')}
-                  className="bg-yellow-600 hover:bg-yellow-700"
+                  className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-yellow-700 bg-yellow-100 hover:bg-yellow-200"
                 >
                   Draft Selected
-                </Button>
-                <Button
-                  size="sm"
+                </button>
+                <button
                   onClick={handleBulkDelete}
-                  className="bg-red-600 hover:bg-red-700"
+                  className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200"
                 >
                   Delete Selected
-                </Button>
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th className="text-left p-3">Title</th>
-                  <th className="text-left p-3">Client</th>
-                  <th className="text-left p-3">Industry</th>
-                  <th className="text-left p-3">Status</th>
-                  <th className="text-left p-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.map((item) => (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3">
+        {/* Portfolio Items Grid */}
+        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+          <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={filteredItems.length > 0 && selectedItems.length === filteredItems.length}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <h3 className="ml-3 text-lg leading-6 font-medium text-gray-900">
+                Portfolio Items ({filteredItems.length})
+              </h3>
+            </div>
+          </div>
+          
+          {filteredItems.length === 0 ? (
+            <div className="text-center py-12">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No portfolio items</h3>
+              <p className="mt-1 text-sm text-gray-500">Get started by creating a new portfolio item.</p>
+              <div className="mt-6">
+                <Link
+                  href="/admin/portfolio/create"
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                >
+                  Create Portfolio Item
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-200">
+              {filteredItems.map((item) => (
+                <li key={item.id} className="px-4 py-4 sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
                       <input
                         type="checkbox"
                         checked={selectedItems.includes(item.id)}
                         onChange={(e) => handleSelectItem(item.id, e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                    </td>
-                    <td className="p-3 font-medium text-gray-900">{item.title}</td>
-                    <td className="p-3 text-gray-700">{item.clientName}</td>
-                    <td className="p-3 text-gray-700">{item.industry}</td>
-                    <td className="p-3">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          item.status === 'published'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex space-x-2">
-                        <Link href={`/admin/portfolio/${item.id}`}>
-                          <Button size="sm">Edit</Button>
-                        </Link>
-                        <Button
-                          size="sm"
-                          onClick={() => handleStatusUpdate(
-                            item.id,
-                            item.status === 'published' ? 'draft' : 'published'
-                          )}
-                          className={item.status === 'published' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'}
-                        >
-                          {item.status === 'published' ? 'Unpublish' : 'Publish'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleDelete(item.id)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Delete
-                        </Button>
+                      <div className="ml-4">
+                        <div className="flex items-center">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {item.title}
+                          </p>
+                          <span
+                            className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              item.status === 'published'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <p className="truncate">
+                              Client: {item.clientName} • Industry: {item.industry}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap">
+                          {item.servicesUsed.map((service) => (
+                            <span
+                              key={service}
+                              className="mr-2 mb-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                            >
+                              {service}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredItems.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-500">
-                      No portfolio items found. {portfolioItems.length === 0 ? (
-                        <Link href="/admin/portfolio/create" className="text-blue-600 hover:text-blue-800">
-                          Create your first portfolio item
-                        </Link>
-                      ) : (
-                        'Try adjusting your filters.'
-                      )}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <select
+                        value={item.status}
+                        onChange={(e) => handleStatusUpdate(item.id, e.target.value as 'published' | 'draft')}
+                        className="text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                      </select>
+                      <Link
+                        href={`/admin/portfolio/${item.id}/edit`}
+                        className="inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

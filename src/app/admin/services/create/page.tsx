@@ -114,6 +114,16 @@ export default function CreateServicePage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Create New Service</h1>
       <ServiceForm />
+import React from 'react';
+
+
+
+// Ensure default export exists
+export default function Page() {
+  return (
+    <div>
+      <h1>Coming Soon</h1>
+      <p>This page is under development.</p>
     </div>
   );
 }
