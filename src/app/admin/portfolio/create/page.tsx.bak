@@ -1,0 +1,130 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+export default function CreatePortfolio() {
+  const router = useRouter()
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    content: '',
+    slug: '',
+    featured: false,
+    imageUrl: ''
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await fetch('/api/portfolio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        router.push('/admin/portfolio')
+      } else {
+        const data = await response.json()
+        setError(data.message || 'Failed to create portfolio item')
+      }
+    } catch (err) {
+      setError('An error occurred while creating the portfolio item')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    }))
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Create Portfolio Item</h1>
+
+          <form onSubmit={handleSubmit} className="bg-white shadow-sm rounded-lg p-6">
+            <div className="mb-4">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                Title
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                required
+                value={formData.title}
+                onChange={handleChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
+                Slug
+              </label>
+              <input
+                type="text"
+                id="slug"
+                name="slug"
+                required
+                value={formData.slug}
+                onChange={handleChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                rows={3}
+                value={formData.description}
+                onChange={handleChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            {error && (
+              <div className="mb-4 text-red-600 text-sm">{error}</div>
+            )}
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="mr-3 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+              >
+                {loading ? 'Creating...' : 'Create Portfolio Item'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}

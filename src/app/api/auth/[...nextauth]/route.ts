@@ -1,17 +1,16 @@
-import NextAuth, { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/lib/prisma"
-import bcrypt from "bcryptjs"
+import { NextRequest } from 'next/server'
+import NextAuth from 'next-auth'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+const handler = NextAuth({
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      name: 'credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -27,12 +26,9 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          const isValidPassword = await bcrypt.compare(
-            credentials.password,
-            user.password
-          )
+          const passwordMatch = await bcrypt.compare(credentials.password, user.password)
 
-          if (!isValidPassword) {
+          if (!passwordMatch) {
             return null
           }
 
@@ -40,34 +36,37 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: user.role,
+            role: user.role
           }
         } catch (error) {
-          console.error("Auth error:", error)
+          console.error('Auth error:', error)
           return null
         }
       }
     })
   ],
+  session: {
+    strategy: 'jwt'
+  },
+  pages: {
+    signIn: '/admin/login'
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role
+        token.role = user.role
       }
       return token
     },
     async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).id = token.sub
-        ;(session.user as any).role = token.role
+      if (token) {
+        session.user.id = token.sub
+        session.user.role = token.role
       }
       return session
     }
   },
-  pages: {
-    signIn: "/admin/login"
-  }
-}
+  secret: process.env.NEXTAUTH_SECRET
+})
 
-const handler = NextAuth(authOptions)
 export { handler as GET, handler as POST }

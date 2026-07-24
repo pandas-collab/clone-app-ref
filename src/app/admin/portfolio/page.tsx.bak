@@ -1,0 +1,93 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+
+export default function PortfolioManagement() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [portfolio, setPortfolio] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (status === 'loading') return
+    if (!session) {
+      router.push('/admin/login')
+      return
+    }
+
+    fetchPortfolio()
+  }, [session, status, router])
+
+  const fetchPortfolio = async () => {
+    try {
+      const response = await fetch('/api/portfolio')
+      if (response.ok) {
+        const data = await response.json()
+        setPortfolio(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch portfolio:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (status === 'loading' || loading) {
+    return <div>Loading...</div>
+  }
+
+  if (!session) {
+    return null
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Portfolio Management</h1>
+            <a
+              href="/admin/portfolio/create"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Create Portfolio Item
+            </a>
+          </div>
+
+          <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul className="divide-y divide-gray-200">
+              {portfolio.map((item: any) => (
+                <li key={item.id}>
+                  <div className="px-4 py-4 sm:px-6">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-indigo-600 truncate">
+                        {item.title}
+                      </p>
+                      <div className="ml-2 flex-shrink-0 flex">
+                        <a
+                          href={`/admin/portfolio/${item.id}`}
+                          className="mr-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+                        >
+                          Edit
+                        </a>
+                      </div>
+                    </div>
+                    <div className="mt-2 sm:flex sm:justify-between">
+                      <div className="sm:flex">
+                        <p className="flex items-center text-sm text-gray-500">
+                          {item.description?.substring(0, 100)}...
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

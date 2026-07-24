@@ -196,3 +196,18 @@ model Testimonial {
 
   @@map("testimonials")
 }
+
+model Content {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  description String?
+  slug        String   @unique
+  type        String   // 'page', 'article', 'resource'
+  published   Boolean  @default(false)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("contents")
+}

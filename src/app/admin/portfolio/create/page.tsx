@@ -1,144 +1,177 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PortfolioForm } from '@/components/forms/PortfolioForm';
 
-export default function CreatePortfolioPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  const initialData = {
+export default function CreatePortfolio() {
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
-    client: '',
-    technologies: [],
-    status: 'draft' as const,
-    featured: false,
+    imageUrl: '',
     projectUrl: '',
-    repositoryUrl: '',
-    completedAt: null,
-    images: []
+    technologies: '',
+    category: ''
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (error) setError('');
   };
 
-  const handleSubmit = async (data: any, saveAndContinue = false) => {
-    setIsLoading(true);
-    setError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
     try {
-      const response = await fetch('/api/admin/portfolio', {
+      const response = await fetch('/api/portfolio', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...formData,
+          technologies: formData.technologies.split(',').map(t => t.trim())
+        })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create portfolio item');
-      }
-
-      const result = await response.json();
-
-      if (saveAndContinue) {
-        // Stay on the form but redirect to edit mode
-        router.push(`/admin/portfolio/${result.id}`);
-      } else {
-        // Return to portfolio list
+      if (response.ok) {
         router.push('/admin/portfolio');
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to create portfolio item');
       }
     } catch (err) {
       console.error('Error creating portfolio item:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    router.push('/admin/portfolio');
-  };
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumbs */}
-      <nav className="mb-8">
-        <ol className="flex items-center space-x-2 text-sm text-gray-600">
-          <li>
-            <button
-              onClick={() => router.push('/admin')}
-              className="hover:text-blue-600 transition-colors"
-            >
-              Admin
-            </button>
-          </li>
-          <li className="before:content-['/'] before:mx-2">
-            <button
-              onClick={() => router.push('/admin/portfolio')}
-              className="hover:text-blue-600 transition-colors"
-            >
-              Portfolio
-            </button>
-          </li>
-          <li className="before:content-['/'] before:mx-2 text-gray-900">
-            Create New
-          </li>
-        </ol>
-      </nav>
+    <div className="p-6">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Create Portfolio Item</h1>
 
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Create New Portfolio Item
-        </h1>
-        <p className="text-gray-600">
-          Add a new case study to showcase your work and client success stories.
-        </p>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
-                Error creating portfolio item
-              </h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Form Card */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6">
-          <PortfolioForm
-            initialData={initialData}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            isLoading={isLoading}
-            mode="create"
+      <form onSubmit={handleSubmit} className="max-w-lg space-y-6">
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            Title
+          </label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            value={formData.title}
+            onChange={handleInputChange}
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
           />
         </div>
-      </div>
+
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+            Description
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            rows={4}
+            value={formData.description}
+            onChange={handleInputChange}
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">
+            Image URL
+          </label>
+          <input
+            type="url"
+            id="imageUrl"
+            name="imageUrl"
+            value={formData.imageUrl}
+            onChange={handleInputChange}
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="projectUrl" className="block text-sm font-medium text-gray-700">
+            Project URL
+          </label>
+          <input
+            type="url"
+            id="projectUrl"
+            name="projectUrl"
+            value={formData.projectUrl}
+            onChange={handleInputChange}
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="technologies" className="block text-sm font-medium text-gray-700">
+            Technologies (comma-separated)
+          </label>
+          <input
+            type="text"
+            id="technologies"
+            name="technologies"
+            value={formData.technologies}
+            onChange={handleInputChange}
+            placeholder="React, Next.js, TypeScript"
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+            Category
+          </label>
+          <select
+            id="category"
+            name="category"
+            value={formData.category}
+            onChange={handleInputChange}
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            required
+          >
+            <option value="">Select a category</option>
+            <option value="web">Web Development</option>
+            <option value="mobile">Mobile App</option>
+            <option value="design">Design</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        {error && (
+          <div className="text-red-600 text-sm">{error}</div>
+        )}
+
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+          >
+            {loading ? 'Creating...' : 'Create Portfolio Item'}
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push('/admin/portfolio')}
+            className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

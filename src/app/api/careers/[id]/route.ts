@@ -1,9 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { prisma } from '@/lib/prisma'
+import { z } from 'zod'
 
-const prisma = new PrismaClient();
+const careerUpdateSchema = z.object({
+  title: z.string().min(1, 'Title is required').optional(),
+  department: z.string().min(1, 'Department is required').optional(),
+  location: z.string().min(1, 'Location is required').optional(),
+  type: z.string().min(1, 'Type is required').optional(),
+  description: z.string().min(1, 'Description is required').optional(),
+  requirements: z.string().min(1, 'Requirements are required').optional(),
+  responsibilities: z.string().min(1, 'Responsibilities are required').optional(),
+  salaryRange: z.string().optional(),
+  benefits: z.string().optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'CLOSED']).optional()
+})
 
 export async function GET(
   request: NextRequest,
@@ -13,33 +24,26 @@ export async function GET(
     const career = await prisma.career.findUnique({
       where: { id: params.id },
       include: {
-        applications: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            status: true,
-            createdAt: true
-          }
+        _count: {
+          select: { applications: true }
         }
       }
-    });
+    })
 
     if (!career) {
       return NextResponse.json(
-        { error: 'Career position not found' },
+        { error: 'Career not found' },
         { status: 404 }
-      );
+      )
     }
 
-    return NextResponse.json({ career });
+    return NextResponse.json(career)
   } catch (error) {
-    console.error('Career fetch error:', error);
+    console.error('Career GET error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch career position' },
+      { error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }
 
@@ -48,38 +52,46 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession()
 
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json();
-    const { title, description, requirements, location, type, salary, published } = body;
+    const body = await request.json()
+    const validatedData = careerUpdateSchema.parse(body)
+
+    // Check if career exists
+    const existingCareer = await prisma.career.findUnique({
+      where: { id: params.id }
+    })
+
+    if (!existingCareer) {
+      return NextResponse.json(
+        { error: 'Career not found' },
+        { status: 404 }
+      )
+    }
 
     const career = await prisma.career.update({
       where: { id: params.id },
-      data: {
-        ...(title && { title }),
-        ...(description && { description }),
-        ...(requirements && { requirements }),
-        ...(location && { location }),
-        ...(type && { type }),
-        ...(salary && { salary }),
-        ...(published !== undefined && { published })
-      }
-    });
+      data: validatedData
+    })
 
-    return NextResponse.json({ career });
+    return NextResponse.json(career)
   } catch (error) {
-    console.error('Career update error:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: error.errors },
+        { status: 400 }
+      )
+    }
+
+    console.error('Career PUT error:', error)
     return NextResponse.json(
-      { error: 'Failed to update career position' },
+      { error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }
 
@@ -88,25 +100,39 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession()
 
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Check if career exists
+    const existingCareer = await prisma.career.findUnique({
+      where: { id: params.id }
+    })
+
+    if (!existingCareer) {
+      return NextResponse.json(
+        { error: 'Career not found' },
+        { status: 404 }
+      )
+    }
+
+    // Delete related applications first
+    await prisma.application.deleteMany({
+      where: { careerId: params.id }
+    })
 
     await prisma.career.delete({
       where: { id: params.id }
-    });
+    })
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Career deletion error:', error);
+    console.error('Career DELETE error:', error)
     return NextResponse.json(
-      { error: 'Failed to delete career position' },
+      { error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }
