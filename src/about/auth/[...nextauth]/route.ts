@@ -8,23 +8,31 @@ const authOptions: NextAuthOptions = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        username: { label: "Username", type: "text" }
       },
       async authorize(credentials) {
         try {
-          if (!credentials?.email || !credentials?.password) {
-            throw new Error("Email and password required")
+          if (!credentials?.password) {
+            throw new Error("Password required")
           }
 
-          // Default admin credentials for demo
-          const adminEmail = "admin@example.com"
-          const adminPassword = "admin123"
-
-          if (credentials.email === adminEmail && credentials.password === adminPassword) {
+          // Check email-based login (admin@example.com)
+          if (credentials.email === "admin@example.com" && credentials.password === "admin123") {
             return {
               id: "1",
-              email: adminEmail,
+              email: "admin@example.com",
               name: "Admin User",
+              role: "admin"
+            }
+          }
+
+          // Check username-based login (admin)
+          if (credentials.username === "admin" && credentials.password === "admin123") {
+            return {
+              id: "1",
+              name: "Admin User",
+              email: "admin@bourntec.com",
               role: "admin"
             }
           }

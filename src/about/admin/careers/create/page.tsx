@@ -23,6 +23,8 @@ export default function CreateCareerPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState<CareerFormData>({
     title: '',
     department: '',
@@ -47,10 +49,20 @@ export default function CreateCareerPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
+  const updateField = (field: keyof CareerFormData, value: any) => {
+    setFormData({ ...formData, [field]: value })
+  }
+
   const handleArrayChange = (field: 'responsibilities' | 'requirements' | 'benefits', index: number, value: string) => {
     const newArray = [...formData[field]]
     newArray[index] = value
     setFormData(prev => ({ ...prev, [field]: newArray }))
+  }
+
+  const updateArrayField = (field: 'requirements' | 'benefits', index: number, value: string) => {
+    const newArray = [...formData[field]]
+    newArray[index] = value
+    setFormData({ ...formData, [field]: newArray })
   }
 
   const addArrayItem = (field: 'responsibilities' | 'requirements' | 'benefits') => {
@@ -70,6 +82,8 @@ export default function CreateCareerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setSaving(true)
+    setError(null)
 
     try {
       // Validate form
@@ -96,9 +110,11 @@ export default function CreateCareerPage() {
 
     } catch (error) {
       console.error('Error creating career:', error)
+      setError('Failed to create career opportunity. Please try again.')
       alert('Failed to create career opportunity. Please try again.')
     } finally {
       setLoading(false)
+      setSaving(false)
     }
   }
 
@@ -111,7 +127,7 @@ export default function CreateCareerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link
           href="/admin/careers"
@@ -120,9 +136,18 @@ export default function CreateCareerPage() {
           <- Back to Careers
         </Link>
 
-        <div className="bg-white shadow rounded-lg p-8">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Create New Career Opportunity</h1>
+          <p className="text-gray-600 mt-2">Add a new job posting</p>
+        </div>
 
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+            {error}
+          </div>
+        )}
+
+        <div className="bg-white shadow rounded-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -154,13 +179,14 @@ export default function CreateCareerPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location
+                  Location *
                 </label>
                 <input
                   type="text"
                   value={formData.location}
                   onChange={(e) => handleInputChange('location', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 />
               </div>
 
@@ -172,11 +198,13 @@ export default function CreateCareerPage() {
                   value={formData.type}
                   onChange={(e) => handleInputChange('type', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 >
                   <option value="Full-time">Full-time</option>
                   <option value="Part-time">Part-time</option>
                   <option value="Contract">Contract</option>
                   <option value="Internship">Internship</option>
+                  <option value="Intern">Intern</option>
                 </select>
               </div>
 
@@ -208,6 +236,21 @@ export default function CreateCareerPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
             </div>
 
             {/* Description */}
@@ -218,77 +261,128 @@ export default function CreateCareerPage() {
               <textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={4}
+                rows={6}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Describe the role, responsibilities, and what you're looking for..."
                 required
               />
             </div>
 
-            {/* Dynamic Arrays */}
-            {(['responsibilities', 'requirements', 'benefits'] as const).map((field) => (
-              <div key={field}>
-                <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                  {field}
-                </label>
-                {formData[field].map((item, index) => (
-                  <div key={index} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={item}
-                      onChange={(e) => handleArrayChange(field, index, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+            {/* Responsibilities */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                Responsibilities
+              </label>
+              {formData.responsibilities.map((item, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => handleArrayChange('responsibilities', index, e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeArrayItem('responsibilities', index)}
+                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md"
+                    disabled={formData.responsibilities.length === 1}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addArrayItem('responsibilities')}
+                className="text-blue-600 hover:text-blue-800 text-sm"
+              >
+                + Add responsibility
+              </button>
+            </div>
+
+            {/* Requirements */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                Requirements
+              </label>
+              {formData.requirements.map((item, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => handleArrayChange('requirements', index, e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter requirement"
+                  />
+                  {formData.requirements.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => removeArrayItem(field, index)}
-                      className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md"
-                      disabled={formData[field].length === 1}
+                      onClick={() => removeArrayItem('requirements', index)}
+                      className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600"
                     >
                       Remove
                     </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => addArrayItem(field)}
-                  className="text-blue-600 hover:text-blue-800 text-sm"
-                >
-                  + Add {field.slice(0, -1)}
-                </button>
-              </div>
-            ))}
-
-            {/* Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addArrayItem('requirements')}
+                className="text-indigo-600 hover:text-indigo-800 text-sm"
               >
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
+                + Add Requirement
+              </button>
             </div>
 
-            {/* Submit Buttons */}
-            <div className="flex gap-4 pt-6">
+            {/* Benefits */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                Benefits
+              </label>
+              {formData.benefits.map((item, index) => (
+                <div key={index} className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={item}
+                    onChange={(e) => handleArrayChange('benefits', index, e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter benefit"
+                  />
+                  {formData.benefits.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeArrayItem('benefits', index)}
+                      className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              ))}
               <button
-                type="submit"
-                disabled={loading}
-                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
+                onClick={() => addArrayItem('benefits')}
+                className="text-indigo-600 hover:text-indigo-800 text-sm"
               >
-                {loading ? 'Creating...' : 'Create Career Opportunity'}
+                + Add Benefit
               </button>
-              <Link
-                href="/admin/careers"
-                className="bg-gray-300 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-400"
+            </div>
+
+            <div className="mt-8 flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400"
               >
                 Cancel
-              </Link>
+              </button>
+              <button
+                type="submit"
+                disabled={loading || saving}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {saving ? 'Creating...' : 'Create Position'}
+              </button>
             </div>
           </form>
         </div>

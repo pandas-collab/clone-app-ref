@@ -372,26 +372,19 @@ export function PortfolioForm({ portfolioId, initialData, onSubmit }: PortfolioF
                   id="clientLogo"
                   accept="image/*"
                   onChange={handleLogoUpload}
-                  className="hidden"
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('clientLogo')?.click()}
-                  disabled={uploadingLogo}
-                >
-                  {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
-                </Button>
+                {uploadingLogo && <p className="text-sm text-gray-500 mt-1">Uploading...</p>}
+                {errors.clientLogo && <p className="mt-1 text-sm text-red-600">{errors.clientLogo}</p>}
               </div>
             </div>
-            {errors.clientLogo && <p className="mt-1 text-sm text-red-600">{errors.clientLogo}</p>}
           </div>
         </div>
 
         {/* Services Used */}
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Services Used *</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {availableServices.map((service) => (
               <label key={service} className="flex items-center">
                 <input
@@ -400,11 +393,11 @@ export function PortfolioForm({ portfolioId, initialData, onSubmit }: PortfolioF
                   onChange={() => handleServiceToggle(service)}
                   className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
-                <span className="ml-2 text-sm text-gray-700">{service}</span>
+                <span className="ml-2 text-sm text-gray-900">{service}</span>
               </label>
             ))}
           </div>
-          {errors.servicesUsed && <p className="mt-1 text-sm text-red-600">{errors.servicesUsed}</p>}
+          {errors.servicesUsed && <p className="mt-2 text-sm text-red-600">{errors.servicesUsed}</p>}
         </div>
 
         {/* Project Details */}
@@ -423,7 +416,7 @@ export function PortfolioForm({ portfolioId, initialData, onSubmit }: PortfolioF
                 className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                   errors.challenge ? 'border-red-300' : ''
                 }`}
-                placeholder="Describe the client's challenge..."
+                placeholder="Describe the challenge or problem this project addressed"
               />
               {errors.challenge && <p className="mt-1 text-sm text-red-600">{errors.challenge}</p>}
             </div>
@@ -440,7 +433,7 @@ export function PortfolioForm({ portfolioId, initialData, onSubmit }: PortfolioF
                 className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                   errors.solution ? 'border-red-300' : ''
                 }`}
-                placeholder="Describe the solution provided..."
+                placeholder="Describe the solution implemented"
               />
               {errors.solution && <p className="mt-1 text-sm text-red-600">{errors.solution}</p>}
             </div>
@@ -457,7 +450,7 @@ export function PortfolioForm({ portfolioId, initialData, onSubmit }: PortfolioF
                 className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                   errors.results ? 'border-red-300' : ''
                 }`}
-                placeholder="Describe the results achieved..."
+                placeholder="Describe the outcomes and results achieved"
               />
               {errors.results && <p className="mt-1 text-sm text-red-600">{errors.results}</p>}
             </div>
@@ -466,48 +459,47 @@ export function PortfolioForm({ portfolioId, initialData, onSubmit }: PortfolioF
 
         {/* Metrics */}
         <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-gray-900">Key Metrics</h3>
-            <Button type="button" variant="outline" onClick={addMetric}>
+            <button
+              type="button"
+              onClick={addMetric}
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
               Add Metric
-            </Button>
+            </button>
           </div>
           <div className="space-y-4">
             {formData.metrics.map((metric, index) => (
-              <div key={index} className="flex gap-4 items-end">
+              <div key={index} className="flex items-center space-x-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Metric Label
-                  </label>
                   <input
                     type="text"
                     value={metric.label}
                     onChange={(e) => handleMetricChange(index, 'label', e.target.value)}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="e.g., Increase in Sales"
+                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Metric label (e.g., 'Conversion Rate')"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Value
-                  </label>
                   <input
                     type="text"
                     value={metric.value}
                     onChange={(e) => handleMetricChange(index, 'value', e.target.value)}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="e.g., 150%"
+                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="Metric value (e.g., '+150%')"
                   />
                 </div>
                 {formData.metrics.length > 1 && (
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
                     onClick={() => removeMetric(index)}
-                    className="text-red-600 hover:text-red-700"
+                    className="inline-flex items-center p-1.5 border border-transparent rounded text-red-700 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                   >
-                    Remove
-                  </Button>
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </button>
                 )}
               </div>
             ))}
@@ -523,60 +515,74 @@ export function PortfolioForm({ portfolioId, initialData, onSubmit }: PortfolioF
             </label>
             <textarea
               id="testimonial"
-              rows={4}
+              rows={3}
               value={formData.testimonial}
               onChange={(e) => handleInputChange('testimonial', e.target.value)}
               className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Client testimonial (optional)..."
+              placeholder="Enter client testimonial (optional)"
             />
           </div>
         </div>
 
         {/* Status */}
         <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Publication Status</h3>
-          <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-              Status
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Status</h3>
+          <div className="flex items-center space-x-6">
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="status"
+                value="draft"
+                checked={formData.status === 'draft'}
+                onChange={(e) => handleInputChange('status', e.target.value)}
+                className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+              />
+              <span className="ml-2 text-sm text-gray-900">Draft</span>
             </label>
-            <select
-              id="status"
-              value={formData.status}
-              onChange={(e) => handleInputChange('status', e.target.value as 'draft' | 'published')}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="status"
+                value="published"
+                checked={formData.status === 'published'}
+                onChange={(e) => handleInputChange('status', e.target.value)}
+                className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+              />
+              <span className="ml-2 text-sm text-gray-900">Published</span>
+            </label>
           </div>
         </div>
 
         {/* Form Actions */}
-        <div className="flex gap-4 justify-end">
-          <Button
+        <div className="flex items-center justify-end space-x-4">
+          <button
             type="button"
-            variant="outline"
-            onClick={() => router.push('/admin/portfolio')}
-            disabled={isLoading}
+            onClick={() => router.back()}
+            className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Cancel
-          </Button>
-          <Button
+          </button>
+          {!portfolioId && (
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e as any, true)}
+              disabled={isLoading}
+              className="bg-gray-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
+            >
+              {isLoading ? 'Saving...' : 'Save & Add Another'}
+            </button>
+          )}
+          <button
             type="submit"
-            variant="outline"
-            onClick={(e) => handleSubmit(e, true)}
             disabled={isLoading}
+            className="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
-            {isLoading ? 'Saving...' : 'Save & Continue'}
-          </Button>
-          <Button
-            type="submit"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Saving...' : portfolioId ? 'Update' : 'Create'}
-          </Button>
+            {isLoading ? 'Saving...' : portfolioId ? 'Update' : 'Save'}
+          </button>
         </div>
       </form>
     </div>
   );
 }
+
+export default PortfolioForm;

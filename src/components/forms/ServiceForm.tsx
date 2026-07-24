@@ -189,89 +189,32 @@ export function ServiceForm({ serviceId, onSubmit, onCancel, initialData }: Serv
     if (!formData.category) {
       newErrors.category = 'Category is required';
     }
+import React, { useState } from 'react';
 
-    if (formData.keyFeatures.filter(f => f.trim()).length === 0) {
-      newErrors.keyFeatures = 'At least one key feature is required';
-    }
+interface ServiceFormProps {
+  onSubmit?: (data: any) => void;
+}
 
-    if (formData.benefits.filter(b => b.trim()).length === 0) {
-      newErrors.benefits = 'At least one benefit is required';
-    }
+export default function ServiceForm({ onSubmit }: ServiceFormProps) {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    features: '',
+    price: ''
+  });
 
-    if (!formData.metaTitle.trim()) {
-      newErrors.metaTitle = 'Meta title is required';
-    }
-
-    if (!formData.metaDescription.trim()) {
-      newErrors.metaDescription = 'Meta description is required';
-    } else if (formData.metaDescription.length > 160) {
-      newErrors.metaDescription = 'Meta description must be 160 characters or less';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent, saveAndContinue = false) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Clean up array fields
-      const cleanedData = {
-        ...formData,
-        keyFeatures: formData.keyFeatures.filter(f => f.trim()),
-        benefits: formData.benefits.filter(b => b.trim())
-      };
-
-      if (onSubmit) {
-        await onSubmit(cleanedData);
-      } else {
-        const url = serviceId ? `/api/services/${serviceId}` : '/api/services';
-        const method = serviceId ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-          method,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(cleanedData),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to save service');
-        }
-
-        if (!saveAndContinue) {
-          router.push('/admin/services');
-        } else {
-          // Show success message or handle save and continue logic
-          alert('Service saved successfully!');
-        }
-      }
-    } catch (error) {
-      console.error('Form submission error:', error);
-      setErrors(prev => ({ 
-        ...prev, 
-        submit: error instanceof Error ? error.message : 'Failed to save service' 
-      }));
-    } finally {
-      setIsSubmitting(false);
+    if (onSubmit) {
+      onSubmit(formData);
     }
   };
 
-  const handleCancel = () => {
-    if (onCancel) {
-      onCancel();
-    } else {
-      router.push('/admin/services');
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
@@ -584,7 +527,41 @@ export function ServiceForm({ serviceId, onSubmit, onCancel, initialData }: Serv
             {isSubmitting ? 'Saving...' : (serviceId ? 'Update Service' : 'Create Service')}
           </button>
         </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label htmlFor="title" className="block text-sm font-medium mb-2">
+          Service Title
+        </label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          value={formData.title}
+          onChange={handleChange}
+          className="w-full border rounded-lg px-3 py-2"
+          required
+        />
       </div>
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium mb-2">
+          Description
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          rows={4}
+          className="w-full border rounded-lg px-3 py-2"
+          required
+        />
+      </div>
+      <button
+        type="submit"
+        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+      >
+        Save Service
+      </button>
     </form>
   );
 }

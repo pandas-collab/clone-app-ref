@@ -6,14 +6,19 @@ import { useRouter } from 'next/navigation'
 
 interface Application {
   id: string
-  firstName: string
-  lastName: string
+  careerId?: string
+  careerTitle?: string
+  firstName?: string
+  lastName?: string
+  name?: string
   email: string
-  phone: string
-  position: string
-  coverLetter: string
+  phone?: string
+  position?: string
+  coverLetter?: string
   resumeUrl?: string
-  appliedAt: string
+  resume?: string
+  appliedAt?: string
+  createdAt?: string
   status: 'pending' | 'reviewed' | 'interviewed' | 'rejected' | 'accepted'
 }
 
@@ -23,6 +28,7 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
   const [application, setApplication] = useState<Application | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -45,24 +51,34 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
           id: "app_001",
           firstName: "John",
           lastName: "Doe",
+          name: "John Doe",
           email: "john@example.com",
           phone: "(555) 123-4567",
           position: "Senior Full Stack Developer",
+          careerTitle: "Senior Full Stack Developer",
+          careerId: "1",
           coverLetter: "I am excited to apply for the Senior Full Stack Developer position. With over 6 years of experience in web development, I have worked extensively with React, Node.js, and various databases. I am passionate about creating scalable applications and mentoring junior developers. I believe my skills and experience would be a great fit for your team.",
           resumeUrl: "/uploads/john-doe-resume.pdf",
+          resume: "john-doe-resume.pdf",
           appliedAt: "2024-01-15T10:30:00Z",
+          createdAt: "2024-01-15T10:30:00Z",
           status: "pending"
         },
         "app_002": {
           id: "app_002",
           firstName: "Jane",
           lastName: "Smith",
+          name: "Jane Smith",
           email: "jane@example.com",
           phone: "(555) 987-6543",
           position: "UX/UI Designer",
+          careerTitle: "UX/UI Designer",
+          careerId: "2",
           coverLetter: "As a UX/UI Designer with 4 years of experience, I am thrilled to apply for this position. I have a strong background in user research, wireframing, and creating design systems. My portfolio demonstrates my ability to create intuitive and accessible interfaces that delight users while meeting business objectives.",
           resumeUrl: "/uploads/jane-smith-resume.pdf",
+          resume: "jane-smith-resume.pdf",
           appliedAt: "2024-01-14T14:20:00Z",
+          createdAt: "2024-01-14T14:20:00Z",
           status: "reviewed"
         }
       }
@@ -70,9 +86,12 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
       const app = mockApplications[params.id]
       if (app) {
         setApplication(app)
+      } else {
+        setError('Application not found')
       }
     } catch (error) {
       console.error('Error loading application:', error)
+      setError('Failed to fetch application details')
     } finally {
       setLoading(false)
     }
@@ -97,6 +116,7 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
       alert('Application status updated successfully!')
     } catch (error) {
       console.error('Error updating status:', error)
+      setError('Failed to update application status')
       alert('Failed to update status. Please try again.')
     } finally {
       setUpdating(false)
@@ -121,6 +141,22 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
     }
   }
 
+  const getDisplayName = () => {
+    if (application?.firstName && application?.lastName) {
+      return `${application.firstName} ${application.lastName}`
+    }
+    return application?.name || 'Unknown'
+  }
+
+  const getPositionTitle = () => {
+    return application?.position || application?.careerTitle || 'Unknown Position'
+  }
+
+  const getAppliedDate = () => {
+    const dateStr = application?.appliedAt || application?.createdAt
+    return dateStr ? new Date(dateStr) : new Date()
+  }
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -132,12 +168,12 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
     )
   }
 
-  if (!application) {
+  if (error || !application) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900">Application Not Found</h2>
-          <p className="mt-2 text-gray-600">The requested application could not be found.</p>
+          <p className="mt-2 text-gray-600">{error || 'The requested application could not be found.'}</p>
           <button
             onClick={() => router.push('/admin/applications')}
             className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
@@ -158,14 +194,14 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
             onClick={() => router.push('/admin/applications')}
             className="text-blue-600 hover:text-blue-800 mb-4 flex items-center"
           >
-            <- Back to Applications
+            ← Back to Applications
           </button>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {application.firstName} {application.lastName}
+                {getDisplayName()}
               </h1>
-              <p className="text-gray-600">Applied for {application.position}</p>
+              <p className="text-gray-600">Applied for {getPositionTitle()}</p>
             </div>
             <span className={getStatusBadgeClass(application.status)}>
               {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
@@ -184,33 +220,45 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
                   <label className="block text-sm font-medium text-gray-500">Email</label>
                   <p className="text-gray-900">{application.email}</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-500">Phone</label>
-                  <p className="text-gray-900">{application.phone}</p>
-                </div>
+                {application.phone && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500">Phone</label>
+                    <p className="text-gray-900">{application.phone}</p>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Cover Letter */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Cover Letter</h2>
-              <div className="prose max-w-none">
-                <p className="text-gray-700 whitespace-pre-wrap">{application.coverLetter}</p>
+            {application.coverLetter && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Cover Letter</h2>
+                <div className="prose max-w-none">
+                  <p className="text-gray-700 whitespace-pre-wrap">{application.coverLetter}</p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Resume */}
-            {application.resumeUrl && (
+            {(application.resumeUrl || application.resume) && (
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Resume</h2>
-                <a
-                  href={application.resumeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                >
-                   Download Resume
-                </a>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-gray-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0v12h8V4H6z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-sm text-gray-700">{application.resume || 'Resume File'}</span>
+                    <a
+                      href={application.resumeUrl || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-auto text-sm text-indigo-600 hover:text-indigo-900"
+                    >
+                      Download
+                    </a>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -224,7 +272,7 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Applied Date</label>
                   <p className="text-gray-900">
-                    {new Date(application.appliedAt).toLocaleDateString('en-US', {
+                    {getAppliedDate().toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
@@ -233,7 +281,11 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500">Position</label>
-                  <p className="text-gray-900">{application.position}</p>
+                  <p className="text-gray-900">{getPositionTitle()}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Status</label>
+                  <p className="text-gray-900 capitalize">{application.status}</p>
                 </div>
               </div>
             </div>
@@ -242,6 +294,18 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Update Status</h2>
               <div className="space-y-2">
+                <select
+                  value={application.status}
+                  onChange={(e) => updateStatus(e.target.value as Application['status'])}
+                  disabled={updating}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="interviewed">Interviewed</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="rejected">Rejected</option>
+                </select>
                 {[
                   { value: 'pending', label: 'Pending Review', color: 'yellow' },
                   { value: 'reviewed', label: 'Reviewed', color: 'blue' },
@@ -253,14 +317,13 @@ export default function ApplicationDetailsPage({ params }: { params: { id: strin
                     key={statusOption.value}
                     onClick={() => updateStatus(statusOption.value as Application['status'])}
                     disabled={updating || application.status === statusOption.value}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm ${
+                    className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                       application.status === statusOption.value
-                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     {statusOption.label}
-                    {application.status === statusOption.value && ' (Current)'}
                   </button>
                 ))}
               </div>

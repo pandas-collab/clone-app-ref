@@ -139,6 +139,7 @@ module.exports = {
         '2xl': '1rem',
         '3xl': '1.5rem',
         '4xl': '2rem',
+        '5xl': '2.5rem',
       },
       maxWidth: {
         '8xl': '88rem',
@@ -235,11 +236,14 @@ module.exports = {
         'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
         'medium': '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         'strong': '0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+        'large': '0 10px 50px -12px rgba(0, 0, 0, 0.25)',
         'colored': '0 10px 25px -3px rgba(59, 130, 246, 0.15), 0 4px 6px -2px rgba(59, 130, 246, 0.05)',
+        'dark': '0 4px 14px 0 rgba(0, 0, 0, 0.39)',
         'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
       },
       backdropBlur: {
         'xs': '2px',
+        '4xl': '72px',
       },
       screens: {
         'xs': '475px',
@@ -259,6 +263,63 @@ module.exports = {
       transitionDuration: {
         '2000': '2000ms',
         '3000': '3000ms',
+      },
+      transitionTimingFunction: {
+        'bounce': 'cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+        'ease-in-expo': 'cubic-bezier(0.95, 0.05, 0.795, 0.035)',
+        'ease-out-expo': 'cubic-bezier(0.19, 1, 0.22, 1)',
+      },
+      gridTemplateColumns: {
+        '16': 'repeat(16, minmax(0, 1fr))',
+        '20': 'repeat(20, minmax(0, 1fr))',
+        'footer': '200px minmax(900px, 1fr) 100px',
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+            color: 'inherit',
+            a: {
+              color: 'inherit',
+              textDecoration: 'underline',
+              fontWeight: '500',
+            },
+            '[class~="lead"]': {
+              color: 'inherit',
+            },
+            strong: {
+              color: 'inherit',
+              fontWeight: '600',
+            },
+            'ol[type="A"]': {
+              '--list-counter-style': 'upper-alpha',
+            },
+            'ol[type="a"]': {
+              '--list-counter-style': 'lower-alpha',
+            },
+            'ol[type="A" s]': {
+              '--list-counter-style': 'upper-alpha',
+            },
+            'ol[type="a" s]': {
+              '--list-counter-style': 'lower-alpha',
+            },
+            'ol[type="I"]': {
+              '--list-counter-style': 'upper-roman',
+            },
+            'ol[type="i"]': {
+              '--list-counter-style': 'lower-roman',
+            },
+            'ol[type="I" s]': {
+              '--list-counter-style': 'upper-roman',
+            },
+            'ol[type="i" s]': {
+              '--list-counter-style': 'lower-roman',
+            },
+            'ol[type="1"]': {
+              '--list-counter-style': 'decimal',
+            },
+          },
+        },
       },
     },
   },

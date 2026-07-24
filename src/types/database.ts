@@ -4,10 +4,17 @@ export interface Service {
   title: string;
   slug: string;
   description: string;
-  content?: string;
+  content: string;
   image?: string;
   featured: boolean;
   published: boolean;
+  status: 'draft' | 'published' | 'archived';
+  metadata?: {
+    seoTitle?: string;
+    seoDescription?: string;
+    keywords?: string[];
+    author?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +29,22 @@ export interface ServiceCreateInput {
   published?: boolean;
 }
 
+export interface CreateServiceInput {
+  title: string;
+  description: string;
+  content: string;
+  slug?: string;
+  image?: string;
+  featured?: boolean;
+  status?: 'draft' | 'published';
+  metadata?: {
+    seoTitle?: string;
+    seoDescription?: string;
+    keywords?: string[];
+    author?: string;
+  };
+}
+
 export interface ServiceUpdateInput {
   title?: string;
   slug?: string;
@@ -30,6 +53,48 @@ export interface ServiceUpdateInput {
   image?: string;
   featured?: boolean;
   published?: boolean;
+}
+
+export interface UpdateServiceInput {
+  title?: string;
+  description?: string;
+  content?: string;
+  slug?: string;
+  image?: string;
+  featured?: boolean;
+  status?: 'draft' | 'published' | 'archived';
+  metadata?: {
+    seoTitle?: string;
+    seoDescription?: string;
+    keywords?: string[];
+    author?: string;
+  };
+}
+
+export interface ServiceFilters {
+  status?: 'draft' | 'published' | 'archived';
+  featured?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
+  sortBy?: 'createdAt' | 'updatedAt' | 'title';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface ServiceResponse {
+  services: Service[];
+  total: number;
+  hasMore: boolean;
+}
+
+export interface ServiceValidationErrors {
+  title?: ValidationError[];
+  description?: ValidationError[];
+  content?: ValidationError[];
+  slug?: ValidationError[];
+  image?: ValidationError[];
+  status?: ValidationError[];
+  metadata?: ValidationError[];
 }
 
 // User types
@@ -122,8 +187,12 @@ export interface Career {
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
-  error?: string;
-  details?: any;
+  error?: {
+    message: string;
+    code?: string;
+    details?: any;
+  };
+  timestamp: string;
 }
 
 export interface PaginatedResponse<T = any> extends ApiResponse<T[]> {
@@ -134,6 +203,12 @@ export interface PaginatedResponse<T = any> extends ApiResponse<T[]> {
     hasNext: boolean;
     hasPrevious: boolean;
   };
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
 }
 
 // Form types

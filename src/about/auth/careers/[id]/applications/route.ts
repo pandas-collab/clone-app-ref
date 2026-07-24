@@ -12,6 +12,7 @@ interface ApplicationData {
 interface JobApplication {
   id: string
   jobId: string
+  careerId: string
   name: string
   email: string
   phone: string
@@ -94,13 +95,13 @@ export async function POST(
       name = body.name
       email = body.email
       phone = body.phone || ''
-      resume = body.resume
+      resume = body.resume || ''
       coverLetter = body.coverLetter || ''
 
       // Validation
-      if (!name || !email || !resume) {
+      if (!name || !email) {
         return NextResponse.json(
-          { error: 'Name, email, and resume are required' },
+          { error: 'Name and email are required' },
           { status: 400 }
         )
       }
@@ -110,6 +111,7 @@ export async function POST(
     const newApplication: JobApplication = {
       id: Date.now().toString(),
       jobId,
+      careerId,
       name,
       email,
       phone,
@@ -138,6 +140,17 @@ export async function POST(
       message: "Application submitted successfully",
       applicationId,
       careerId,
+      application: {
+        id: newApplication.id,
+        careerId: newApplication.careerId,
+        name: newApplication.name,
+        email: newApplication.email,
+        resume: newApplication.resume,
+        coverLetter: newApplication.coverLetter,
+        status: newApplication.status,
+        createdAt: newApplication.createdAt.toISOString(),
+        updatedAt: newApplication.updatedAt.toISOString()
+      },
       data: newApplication
     }, { status: 201 })
 
@@ -158,18 +171,30 @@ export async function GET(
     const careerId = params.id
     const jobId = params.id
 
-    if (!jobId) {
+    if (!careerId || !jobId) {
       return NextResponse.json(
-        { error: 'Job ID is required' },
+        { error: 'Career ID is required' },
         { status: 400 }
       )
     }
 
     // Filter applications for this job
-    const jobApplications = applications.filter(app => app.jobId === jobId)
+    const jobApplications = applications.filter(app => app.jobId === jobId || app.careerId === careerId)
+
+    // Mock applications data for integration branch compatibility
+    const mockApplicationsIntegration = [
+      {
+        id: '1',
+        careerId,
+        name: 'John Doe',
+        email: 'john@example.com',
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      }
+    ]
 
     // Mock applications data for source branch compatibility
-    const mockApplications = [
+    const mockApplicationsSource = [
       {
         id: "app_001",
         firstName: "John",
@@ -192,7 +217,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      applications: mockApplications,
+      applications: [...mockApplicationsIntegration, ...mockApplicationsSource],
       careerId,
       data: jobApplications,
       count: jobApplications.length

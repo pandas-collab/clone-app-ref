@@ -1,13 +1,12 @@
 import React from 'react';
 
-
-
-// Ensure default export exists
-export default function Page() {
+export default function ApplicationsPage() {
   return (
-    <div>
-      <h1>Coming Soon</h1>
-      <p>This page is under development.</p>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Job Applications</h1>
+      <div className="bg-white rounded-lg shadow p-6">
+        <p className="text-gray-600">No applications found.</p>
+      </div>
     </div>
   );
 }

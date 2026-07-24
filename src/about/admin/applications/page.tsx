@@ -9,11 +9,13 @@ interface Application {
   id: string
   jobId?: string
   jobTitle?: string
+  careerId?: string
+  careerTitle?: string
   firstName?: string
   lastName?: string
   name?: string
   email: string
-  phone: string
+  phone?: string
   position?: string
   appliedAt?: string
   createdAt?: string
@@ -55,7 +57,9 @@ export default function ApplicationsPage() {
           phone: "(555) 123-4567",
           position: "Senior Full Stack Developer",
           jobTitle: "Senior Full Stack Developer",
+          careerTitle: "Senior Full Stack Developer",
           jobId: "1",
+          careerId: "1",
           appliedAt: "2024-01-15T10:30:00Z",
           createdAt: "2024-01-15T10:30:00Z",
           status: "pending"
@@ -69,7 +73,9 @@ export default function ApplicationsPage() {
           phone: "(555) 987-6543",
           position: "UX/UI Designer",
           jobTitle: "UX/UI Designer",
+          careerTitle: "UX/UI Designer",
           jobId: "2",
+          careerId: "2",
           appliedAt: "2024-01-14T14:20:00Z",
           createdAt: "2024-01-14T14:20:00Z",
           status: "reviewed"
@@ -81,9 +87,11 @@ export default function ApplicationsPage() {
           name: "Mike Johnson",
           email: "mike@example.com",
           phone: "(555) 456-7890",
-          position: "Senior Full Stack Developer",
-          jobTitle: "Senior Full Stack Developer",
-          jobId: "1",
+          position: "DevOps Engineer",
+          jobTitle: "DevOps Engineer",
+          careerTitle: "DevOps Engineer",
+          jobId: "3",
+          careerId: "3",
           appliedAt: "2024-01-13T09:15:00Z",
           createdAt: "2024-01-13T09:15:00Z",
           status: "interviewed"
@@ -101,6 +109,19 @@ export default function ApplicationsPage() {
 
   const fetchApplications = async () => {
     await loadApplications()
+  }
+
+  const updateApplicationStatus = async (id: string, status: Application['status']) => {
+    try {
+      setApplications(prev =>
+        prev.map(app =>
+          app.id === id ? { ...app, status } : app
+        )
+      )
+    } catch (err) {
+      setError('Failed to update application status')
+      console.error('Update status error:', err)
+    }
   }
 
   const getStatusBadgeClass = (status: string) => {
@@ -149,7 +170,7 @@ export default function ApplicationsPage() {
   }
 
   const getDisplayPosition = (app: Application) => {
-    return app.position || app.jobTitle || 'Unknown Position'
+    return app.position || app.jobTitle || app.careerTitle || 'Unknown Position'
   }
 
   if (status === 'loading' || loading) {
@@ -266,12 +287,25 @@ export default function ApplicationsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <Link
-                        href={`/admin/applications/${application.id}`}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
-                      >
-                        View Details
-                      </Link>
+                      <div className="flex space-x-2">
+                        <Link
+                          href={`/admin/applications/${application.id}`}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          View Details
+                        </Link>
+                        <select
+                          value={application.status}
+                          onChange={(e) => updateApplicationStatus(application.id, e.target.value as Application['status'])}
+                          className="text-sm border border-gray-300 rounded px-2 py-1"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="reviewed">Reviewed</option>
+                          <option value="interviewed">Interviewed</option>
+                          <option value="accepted">Accepted</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -15,8 +15,8 @@ interface Career {
   postedAt?: string
   status?: string
   isActive?: boolean
-  createdAt?: Date
-  updatedAt?: Date
+  createdAt?: Date | string
+  updatedAt?: Date | string
 }
 
 // Mock database - replace with your actual database
@@ -92,6 +92,18 @@ let careers: Career[] = [
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date()
+  },
+  {
+    id: '3',
+    title: 'DevOps Engineer',
+    department: 'Infrastructure',
+    location: 'New York, NY',
+    type: 'Full-time',
+    description: 'Join our DevOps team to manage cloud infrastructure...',
+    requirements: ['AWS/Azure experience', 'Kubernetes', 'CI/CD pipelines'],
+    benefits: ['Health insurance', 'Stock options', 'Learning budget'],
+    status: 'active',
+    createdAt: '2024-01-02T00:00:00Z'
   }
 ]
 
@@ -165,7 +177,9 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      data: careers[careerIndex]
+      data: careers[careerIndex],
+      message: 'Career updated successfully',
+      career: careers[careerIndex]
     })
   } catch (error) {
     console.error('Error updating career:', error)

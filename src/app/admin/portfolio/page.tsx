@@ -314,7 +314,7 @@ export default function PortfolioPage() {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                <option value="">All Statuses</option>
+                <option value="">All Status</option>
                 <option value="published">Published</option>
                 <option value="draft">Draft</option>
               </select>
@@ -326,154 +326,58 @@ export default function PortfolioPage() {
         {selectedItems.length > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-blue-800">
-                {selectedItems.length} item(s) selected
-              </p>
-              <div className="space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
+              <div className="flex items-center">
+                <span className="text-sm font-medium text-blue-900">
+                  {selectedItems.length} item(s) selected
+                </span>
+              </div>
+              <div className="flex space-x-2">
+                <button
                   onClick={() => handleBulkStatusUpdate('published')}
+                  className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
                 >
-                  Publish Selected
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
+                  Publish
+                </button>
+                <button
                   onClick={() => handleBulkStatusUpdate('draft')}
+                  className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-yellow-700 bg-yellow-100 hover:bg-yellow-200"
                 >
-                  Draft Selected
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
+                  Draft
+                </button>
+                <button
                   onClick={handleBulkDelete}
+                  className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200"
                 >
-                  Delete Selected
-                </Button>
+                  Delete
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Portfolio Items Table */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <input
-                      type="checkbox"
-                      checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
-                      onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Client
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Industry
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Services
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.includes(item.id)}
-                        onChange={(e) => handleSelectItem(item.id, e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{item.title}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{item.clientName}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{item.industry}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {item.servicesUsed.slice(0, 2).map((service) => (
-                          <span
-                            key={service}
-                            className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                          >
-                            {service}
-                          </span>
-                        ))}
-                        {item.servicesUsed.length > 2 && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            +{item.servicesUsed.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={item.status}
-                        onChange={(e) => handleStatusUpdate(item.id, e.target.value as 'published' | 'draft')}
-                        className={`text-xs font-medium rounded-full px-2 py-1 border-0 ${
-                          item.status === 'published'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        <option value="draft">Draft</option>
-                        <option value="published">Published</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                      <Link
-                        href={`/admin/portfolio/${item.id}/edit`}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Edit
-                      </Link>
-                      <Link
-                        href={`/admin/portfolio/${item.id}`}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        View
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Portfolio Items List */}
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="ml-3 text-sm font-medium text-gray-900">
+                Select All ({filteredItems.length} items)
+              </span>
+            </div>
           </div>
           
-          {filteredItems.length === 0 && (
+          {filteredItems.length === 0 ? (
             <div className="text-center py-12">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A10.003 10.003 0 0124 26c4.21 0 7.813 2.602 9.288 6.286" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <h3 className="mt-2 text-sm font-medium text-gray-900">No portfolio items</h3>
-              <p className="mt-1 text-sm text-gray-500">Get started by creating a new portfolio item.</p>
+              <p className="mt-1 text-sm text-gray-500">Get started by creating your first portfolio item.</p>
               <div className="mt-6">
                 <Link
                   href="/admin/portfolio/create"
@@ -486,6 +390,74 @@ export default function PortfolioPage() {
                 </Link>
               </div>
             </div>
+          ) : (
+            <ul className="divide-y divide-gray-200">
+              {filteredItems.map((item) => (
+                <li key={item.id} className="px-4 py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.includes(item.id)}
+                        onChange={(e) => handleSelectItem(item.id, e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <div className="ml-4 min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {item.title}
+                            </p>
+                            <p className="text-sm text-gray-500 truncate">
+                              {item.clientName} • {item.industry}
+                            </p>
+                            <div className="flex items-center mt-1">
+                              <span className="text-xs text-gray-500 mr-2">Services:</span>
+                              {item.servicesUsed.map((service, index) => (
+                                <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 mr-1">
+                                  {service}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              item.status === 'published' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {item.status}
+                            </span>
+                            <div className="flex space-x-1">
+                              <Link
+                                href={`/admin/portfolio/${item.id}/edit`}
+                                className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                              >
+                                Edit
+                              </Link>
+                              <select
+                                value={item.status}
+                                onChange={(e) => handleStatusUpdate(item.id, e.target.value as 'published' | 'draft')}
+                                className="text-xs border-gray-300 rounded"
+                              >
+                                <option value="draft">Draft</option>
+                                <option value="published">Published</option>
+                              </select>
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className="text-red-600 hover:text-red-900 text-sm font-medium"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>

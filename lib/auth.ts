@@ -116,6 +116,7 @@ if (!credentials?.email || !credentials?.password) {
       console.log('User signed out:', { userId: token?.id })
     }
   },
+  secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development'
 }
 

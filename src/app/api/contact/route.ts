@@ -39,7 +39,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // TODO: Process contact form submission
+    // Process contact form submission
+    console.log('Contact form submission:', body);
+
     // TODO: Save to database
     // TODO: Send email notification
 
