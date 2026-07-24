@@ -1,12 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true
-  },
   images: {
     domains: ['localhost']
   },
   webpack: (config, { dev, isServer }) => {
+    // Handle encoding module resolution
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      encoding: false,
+    };
+
     if (!dev) {
       config.ignoreWarnings = [
         /Critical dependency: the request of a dependency is an expression/,
@@ -22,6 +25,7 @@ const nextConfig = {
         net: false,
         tls: false,
         crypto: false,
+        encoding: false,
       };
     }
 

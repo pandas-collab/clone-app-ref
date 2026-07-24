@@ -1,19 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ServiceForm } from '@/components/forms/ServiceForm';
 
 export default function CreateServicePage() {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    features: '',
+    price: '',
+    imageUrl: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (formData: any) => {
-    if (isSubmitting) return;
-    
-    setIsSubmitting(true);
-    setError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
     try {
       const response = await fetch('/api/services', {
@@ -21,99 +26,124 @@ export default function CreateServicePage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          features: formData.features.split(',').map(f => f.trim()).filter(f => f),
+          price: formData.price ? parseFloat(formData.price) : null
+        }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create service');
-      }
-
-      const result = await response.json();
-      
-      // Redirect to services list or the created service
-      if (formData.action === 'save_continue') {
-        router.push(`/admin/services/${result.id}`);
-      } else {
+      if (response.ok) {
         router.push('/admin/services');
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to create service');
       }
     } catch (err) {
-      console.error('Error creating service:', err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setError('An error occurred. Please try again.');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    router.push('/admin/services');
-  };
-
   return (
-    <div className="container mx-auto px-6 py-8">
-      <div className="mb-8">
-        <nav className="flex" aria-label="Breadcrumb">
-          <ol className="inline-flex items-center space-x-1 md:space-x-3">
-            <li className="inline-flex items-center">
-              <a href="/admin" className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
-                Admin
-              </a>
-            </li>
-            <li>
-              <div className="flex items-center">
-                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-                <a href="/admin/services" className="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2">
-                  Services
-                </a>
-              </div>
-            </li>
-            <li>
-              <div className="flex items-center">
-                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-                <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2">Create</span>
-              </div>
-            </li>
-          </ol>
-        </nav>
-        
-        <div className="mt-4">
-          <h1 className="text-3xl font-bold text-gray-900">Create New Service</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Add a new service to your website. Fill in all required fields and configure the service details.
-          </p>
-        </div>
-      </div>
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-8">Create Service</h1>
 
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium">Error creating service</p>
-              <p className="mt-1 text-sm">{error}</p>
-            </div>
+      <form onSubmit={handleSubmit} className="max-w-2xl">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+            {error}
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="bg-white shadow-sm ring-1 ring-gray-900/5 rounded-lg">
-        <div className="px-6 py-6">
-          <ServiceForm
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-            mode="create"
+        <div className="mb-6">
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            Title *
+          </label>
+          <input
+            type="text"
+            id="title"
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={formData.title}
+            onChange={(e) => setFormData({...formData, title: e.target.value})}
           />
         </div>
-      </div>
+
+        <div className="mb-6">
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            Description *
+          </label>
+          <textarea
+            id="description"
+            required
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={formData.description}
+            onChange={(e) => setFormData({...formData, description: e.target.value})}
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="features" className="block text-sm font-medium text-gray-700 mb-2">
+            Features (comma-separated)
+          </label>
+          <input
+            type="text"
+            id="features"
+            placeholder="Feature 1, Feature 2, Feature 3"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={formData.features}
+            onChange={(e) => setFormData({...formData, features: e.target.value})}
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
+            Price
+          </label>
+          <input
+            type="number"
+            id="price"
+            step="0.01"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={formData.price}
+            onChange={(e) => setFormData({...formData, price: e.target.value})}
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
+            Image URL
+          </label>
+          <input
+            type="url"
+            id="imageUrl"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={formData.imageUrl}
+            onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
+          />
+        </div>
+
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md disabled:opacity-50"
+          >
+            {loading ? 'Creating...' : 'Create Service'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push('/admin/services')}
+            className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2 rounded-md"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
