@@ -1,155 +1,56 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 interface Application {
   id: string
-  jobId?: string
-  jobTitle?: string
-  careerId?: string
-  careerTitle?: string
-  firstName?: string
-  lastName?: string
-  name?: string
+  careerId: string
+  name: string
   email: string
-  phone?: string
-  position?: string
-  appliedAt?: string
-  createdAt?: string
-  status: 'pending' | 'reviewed' | 'interviewed' | 'rejected' | 'accepted'
+  phone: string
+  status: 'pending' | 'reviewed' | 'accepted' | 'rejected'
+  createdAt: string
 }
 
 export default function ApplicationsPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<string>('all')
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login')
-      return
-    }
-
-    if (status === 'authenticated') {
-      loadApplications()
-    }
-  }, [status, router])
-
-  const loadApplications = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      // Mock applications data combining both structures
-      const mockApplications: Application[] = [
-        {
-          id: "app_001",
-          firstName: "John",
-          lastName: "Doe",
-          name: "John Doe",
-          email: "john@example.com",
-          phone: "(555) 123-4567",
-          position: "Senior Full Stack Developer",
-          jobTitle: "Senior Full Stack Developer",
-          careerTitle: "Senior Full Stack Developer",
-          jobId: "1",
-          careerId: "1",
-          appliedAt: "2024-01-15T10:30:00Z",
-          createdAt: "2024-01-15T10:30:00Z",
-          status: "pending"
-        },
-        {
-          id: "app_002",
-          firstName: "Jane",
-          lastName: "Smith",
-          name: "Jane Smith",
-          email: "jane@example.com",
-          phone: "(555) 987-6543",
-          position: "UX/UI Designer",
-          jobTitle: "UX/UI Designer",
-          careerTitle: "UX/UI Designer",
-          jobId: "2",
-          careerId: "2",
-          appliedAt: "2024-01-14T14:20:00Z",
-          createdAt: "2024-01-14T14:20:00Z",
-          status: "reviewed"
-        },
-        {
-          id: "app_003",
-          firstName: "Mike",
-          lastName: "Johnson",
-          name: "Mike Johnson",
-          email: "mike@example.com",
-          phone: "(555) 456-7890",
-          position: "DevOps Engineer",
-          jobTitle: "DevOps Engineer",
-          careerTitle: "DevOps Engineer",
-          jobId: "3",
-          careerId: "3",
-          appliedAt: "2024-01-13T09:15:00Z",
-          createdAt: "2024-01-13T09:15:00Z",
-          status: "interviewed"
-        }
-      ]
-
-      setApplications(mockApplications)
-    } catch (err) {
-      setError('Failed to fetch applications')
-      console.error('Error loading applications:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
+    fetchApplications()
+  }, [])
 
   const fetchApplications = async () => {
-    await loadApplications()
-  }
-
-  const updateApplicationStatus = async (id: string, status: Application['status']) => {
     try {
-      setApplications(prev =>
-        prev.map(app =>
-          app.id === id ? { ...app, status } : app
-        )
-      )
-    } catch (err) {
-      setError('Failed to update application status')
-      console.error('Update status error:', err)
-    }
-  }
-
-  const getStatusBadgeClass = (status: string) => {
-    const baseClass = "px-2 py-1 rounded-full text-xs font-medium"
-    switch (status) {
-      case 'pending':
-        return `${baseClass} bg-yellow-100 text-yellow-800`
-      case 'reviewed':
-        return `${baseClass} bg-blue-100 text-blue-800`
-      case 'interviewed':
-        return `${baseClass} bg-purple-100 text-purple-800`
-      case 'accepted':
-        return `${baseClass} bg-green-100 text-green-800`
-      case 'rejected':
-        return `${baseClass} bg-red-100 text-red-800`
-      default:
-        return `${baseClass} bg-gray-100 text-gray-800`
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'reviewed': return 'bg-blue-100 text-blue-800'
-      case 'interviewed': return 'bg-purple-100 text-purple-800'
-      case 'accepted': return 'bg-green-100 text-green-800'
-      case 'rejected': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      setLoading(true)
+      // Mock data for demonstration
+      const mockApplications: Application[] = [
+        {
+          id: '1',
+          careerId: '1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          phone: '555-0123',
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: '2',
+          careerId: '1',
+          name: 'Jane Smith',
+          email: 'jane@example.com',
+          phone: '555-0124',
+          status: 'reviewed',
+          createdAt: new Date().toISOString()
+        }
+      ]
+      setApplications(mockApplications)
+    } catch (error) {
+      console.error('Failed to fetch applications:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -157,161 +58,137 @@ export default function ApplicationsPage() {
     filter === 'all' || app.status === filter
   )
 
-  const getDisplayName = (app: Application) => {
-    if (app.firstName && app.lastName) {
-      return `${app.firstName} ${app.lastName}`
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800'
+      case 'reviewed': return 'bg-blue-100 text-blue-800'
+      case 'accepted': return 'bg-green-100 text-green-800'
+      case 'rejected': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
-    return app.name || 'Unknown'
   }
 
-  const getDisplayDate = (app: Application) => {
-    const dateString = app.appliedAt || app.createdAt
-    return dateString ? new Date(dateString).toLocaleDateString() : 'Unknown'
-  }
-
-  const getDisplayPosition = (app: Application) => {
-    return app.position || app.jobTitle || app.careerTitle || 'Unknown Position'
-  }
-
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading applications...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="text-red-800 font-medium">Error</div>
-          <div className="text-red-600 text-sm">{error}</div>
-          <button
-            onClick={fetchApplications}
-            className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Retry
-          </button>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 rounded w-1/4 mb-4"></div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-16 bg-gray-300 rounded"></div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Job Applications</h1>
           <p className="mt-2 text-gray-600">Manage and review job applications</p>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="mb-6">
-          <nav className="flex space-x-8">
-            {[
-              { key: 'all', label: 'All Applications', count: applications.length },
-              { key: 'pending', label: 'Pending', count: applications.filter(a => a.status === 'pending').length },
-              { key: 'reviewed', label: 'Reviewed', count: applications.filter(a => a.status === 'reviewed').length },
-              { key: 'interviewed', label: 'Interviewed', count: applications.filter(a => a.status === 'interviewed').length },
-              { key: 'accepted', label: 'Accepted', count: applications.filter(a => a.status === 'accepted').length },
-              { key: 'rejected', label: 'Rejected', count: applications.filter(a => a.status === 'rejected').length }
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setFilter(tab.key)}
-                className={`${
-                  filter === tab.key
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors`}
-              >
-                {tab.label} ({tab.count})
-              </button>
-            ))}
-          </nav>
-        </div>
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-medium text-gray-900">All Applications</h2>
+              <div className="flex space-x-4">
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 bg-white text-sm"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
-        {/* Applications Table */}
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Applicant
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Position
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Applied Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredApplications.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
-                    No applications found
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Applicant
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Applied
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ) : (
-                filteredApplications.map((application) => (
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredApplications.map((application) => (
                   <tr key={application.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {getDisplayName(application)}
-                        </div>
-                        <div className="text-sm text-gray-500">{application.email}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {application.name}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {getDisplayPosition(application)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {getDisplayDate(application)}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{application.email}</div>
+                      <div className="text-sm text-gray-500">{application.phone}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={getStatusBadgeClass(application.status)}>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(application.status)}`}>
                         {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/admin/applications/${application.id}`}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          View Details
-                        </Link>
-                        <select
-                          value={application.status}
-                          onChange={(e) => updateApplicationStatus(application.id, e.target.value as Application['status'])}
-                          className="text-sm border border-gray-300 rounded px-2 py-1"
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="reviewed">Reviewed</option>
-                          <option value="interviewed">Interviewed</option>
-                          <option value="accepted">Accepted</option>
-                          <option value="rejected">Rejected</option>
-                        </select>
-                      </div>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(application.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <Link
+                        href={`/about/admin/applications/${application.id}`}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        View Details
+                      </Link>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredApplications.length === 0 && (
+            <div className="text-center py-12">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No applications</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                No applications match the current filter.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
