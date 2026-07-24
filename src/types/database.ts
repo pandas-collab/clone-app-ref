@@ -1,60 +1,117 @@
-// Lead and contact form related types
+// ============================================================================
+// Database Types - Career Management
+// ============================================================================
 
-export interface ContactSubmission {
-  id: string
-  name: string
-  email: string
-  phone?: string
-  company?: string
-  message: string
-  source: string
-  status: LeadStatus
-  score: number
-  createdAt: Date
-  updatedAt: Date
+export enum JobStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+  CLOSED = 'CLOSED'
 }
 
-export enum LeadStatus {
-  NEW = 'new',
-  CONTACTED = 'contacted',
-  QUALIFIED = 'qualified',
-  CONVERTED = 'converted',
-  CLOSED = 'closed'
+export enum ApplicationStatus {
+  SUBMITTED = 'SUBMITTED',
+  REVIEWING = 'REVIEWING',
+  INTERVIEWED = 'INTERVIEWED',
+  REJECTED = 'REJECTED',
+  ACCEPTED = 'ACCEPTED'
 }
 
-export interface LeadScore {
-  id: string
-  leadId: string
-  score: number
-  factors: ScoreFactor[]
-  calculatedAt: Date
+export interface JobPosting {
+  id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'REMOTE' | 'HYBRID';
+  description: string;
+  requirements: string[];
+  benefits: string[];
+  status: JobStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  applications?: JobApplication[];
 }
 
-export interface ScoreFactor {
-  name: string
-  value: number
-  weight: number
+export interface JobApplication {
+  id: string;
+  jobId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  coverLetter: string;
+  resumeUrl: string;
+  status: ApplicationStatus;
+  submittedAt: Date;
+  job?: JobPosting;
 }
 
-export interface EmailNotification {
-  id: string
-  leadId: string
-  type: NotificationType
-  recipient: string
-  subject: string
-  body: string
-  sentAt: Date
-  status: EmailStatus
+export interface CreateJobPostingData {
+  title: string;
+  department: string;
+  location: string;
+  type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'REMOTE' | 'HYBRID';
+  description: string;
+  requirements: string[];
+  benefits: string[];
+  status?: JobStatus;
 }
 
-export enum NotificationType {
-  LEAD_CREATED = 'lead_created',
-  LEAD_UPDATED = 'lead_updated',
-  FOLLOW_UP = 'follow_up'
+export interface UpdateJobPostingData extends Partial<CreateJobPostingData> {}
+
+export interface CreateJobApplicationData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  coverLetter: string;
+  resumeFile?: File;
 }
 
-export enum EmailStatus {
-  PENDING = 'pending',
-  SENT = 'sent',
-  FAILED = 'failed'
+export interface UpdateJobApplicationData {
+  status: ApplicationStatus;
+}
+
+// Existing types from other agents (preserved)
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  role: 'USER' | 'ADMIN';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Service {
+  id: string;
+  title: string;
+  description: string;
+  features: string[];
+  price?: number;
+  slug: string;
+  status: 'DRAFT' | 'PUBLISHED';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Portfolio {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  projectUrl?: string;
+  technologies: string[];
+  slug: string;
+  status: 'DRAFT' | 'PUBLISHED';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  status: 'NEW' | 'CONTACTED' | 'RESOLVED';
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -1,85 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server'
-
-// Lead status management functions
-function updateLeadStatus(leadId: string, status: string) {
-  // This would typically update the database
-  // For now, we return the status update
-  return { leadId, status, updatedAt: new Date() };
-}
-
-function getLeadsByStatus(status?: string) {
-  // This would typically query the database
-  // For now, we return mock data structure
-  return {
-    leads: [],
-    total: 0,
-    status: status || "all"
-  };
-}
-
-function assignLeadToUser(leadId: string, userId: string) {
-  return {
-    leadId,
-    assignedTo: userId,
-    assignedAt: new Date()
-  };
-}
+import { NextRequest, NextResponse } from 'next/server';
+import { sendEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-
-    // Basic validation
-    const { name, email, message } = body
+    const body = await request.json();
+    const { name, email, message } = body;
 
     if (!name || !email || !message) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
-      )
+      );
     }
 
-    // TODO: Process contact form submission
-    // TODO: Save to database
-    // TODO: Send email notification
+    // Send email notification
+    await sendEmail(
+      process.env.ADMIN_EMAIL || 'admin@example.com',
+      `New Contact Form Submission from ${name}`,
+      `
+        <h3>New Contact Form Submission</h3>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Message:</strong></p>
+        <p>${message}</p>
+      `
+    );
 
     return NextResponse.json(
-      { message: 'Contact form submitted successfully' },
+      { message: 'Message sent successfully' },
       { status: 200 }
-    )
+    );
   } catch (error) {
-    console.error('Contact form error:', error)
+    console.error('Contact form error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
-
-export async function GET() {
-  const { searchParams } = new URL(request.url);
-  const action = searchParams.get("action");
-  const status = searchParams.get("status");
-  const leadId = searchParams.get("leadId");
-  const userId = searchParams.get("userId");
-  
-  // Handle lead status management actions
-  if (action === "updateStatus" && leadId && status) {
-    const result = updateLeadStatus(leadId, status);
-    return NextResponse.json(result);
-  }
-  
-  if (action === "assign" && leadId && userId) {
-    const result = assignLeadToUser(leadId, userId);
-    return NextResponse.json(result);
-  }
-  
-  if (action === "getByStatus") {
-    const result = getLeadsByStatus(status || undefined);
-    return NextResponse.json(result);
-  }
-  return NextResponse.json(
-    { message: 'Contact API is running' },
-    { status: 200 }
-  )
 }
