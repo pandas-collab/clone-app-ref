@@ -1,31 +1,43 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
 interface Career {
   id: string
   title: string
-  department: string
+  description: string
+  requirements: string
+  benefits?: string
   location: string
   type: string
-  experience: string
-  salary: string
-  description: string
-  responsibilities: string[]
-  requirements: string[]
-  benefits: string[]
-  status: 'active' | 'inactive' | 'draft'
-  postedAt: string
+  salary?: string
+  status: string
 }
 
-export default function CareerDetailsPage({ params }: { params: { id: string } }) {
+export default function CareerEditPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const params = useParams()
   const [career, setCareer] = useState<Career | null>(null)
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    requirements: '',
+    benefits: '',
+    location: '',
+    type: 'FULL_TIME',
+    salary: '',
+    status: 'ACTIVE'
+  })
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -33,69 +45,95 @@ export default function CareerDetailsPage({ params }: { params: { id: string } }
       return
     }
 
-    if (status === 'authenticated') {
-      loadCareer()
+    if (session?.user?.role !== 'ADMIN') {
+      router.push('/unauthorized')
+      return
     }
-  }, [status, router, params.id])
 
-  const loadCareer = async () => {
+    if (params.id) {
+      fetchCareer()
+    }
+  }, [session, status, router, params.id])
+
+  const fetchCareer = async () => {
     try {
       setLoading(true)
+      const response = await fetch(`/api/admin/careers/${params.id}`)
 
-      // Mock career data
-      const mockCareers: Record<string, Career> = {
-        "1": {
-          id: "1",
-          title: "Senior Full Stack Developer",
-          department: "Engineering",
-          location: "Remote / San Francisco, CA",
-          type: "Full-time",
-          experience: "Senior Level",
-          salary: "$120,000 - $180,000",
-          description: "We are seeking a talented Senior Full Stack Developer to join our growing engineering team. You will work on cutting-edge web applications and help shape our technical architecture.",
-          responsibilities: [
-            "Develop and maintain web applications using modern frameworks",
-            "Collaborate with cross-functional teams to define and implement features",
-            "Write clean, maintainable, and well-documented code",
-            "Participate in code reviews and technical discussions",
-            "Mentor junior developers and contribute to team growth"
-          ],
-          requirements: [
-            "5+ years of experience in full-stack development",
-            "Proficiency in React, Node.js, and TypeScript",
-            "Experience with databases (PostgreSQL, MongoDB)",
-            "Knowledge of cloud platforms (AWS, GCP, or Azure)",
-            "Strong problem-solving skills and attention to detail"
-          ],
-          benefits: [
-            "Competitive salary and equity package",
-            "Comprehensive health, dental, and vision insurance",
-            "Flexible working hours and remote work options",
-            "Professional development opportunities",
-            "Modern office with great amenities"
-          ],
-          postedAt: "2024-01-10T00:00:00Z",
-          status: "active"
-        }
+      if (!response.ok) {
+        throw new Error('Failed to fetch career')
       }
 
-      const careerData = mockCareers[params.id]
-      if (careerData) {
-        setCareer(careerData)
-      }
+      const data = await response.json()
+      setCareer(data)
+      setFormData({
+        title: data.title,
+        description: data.description,
+        requirements: data.requirements,
+        benefits: data.benefits || '',
+        location: data.location,
+        type: data.type,
+        salary: data.salary || '',
+        status: data.status
+      })
     } catch (error) {
-      console.error('Error loading career:', error)
+      console.error('Fetch error:', error)
+      setError('Failed to load career')
     } finally {
       setLoading(false)
     }
   }
 
-  if (status === 'loading' || loading) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    try {
+      setSaving(true)
+      setError('')
+      setSuccess('')
+
+      const response = await fetch(`/api/admin/careers/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update career')
+      }
+
+      setSuccess('Career updated successfully!')
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (error: any) {
+      setError(error.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading career details...</p>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+            <div className="bg-white p-6 rounded-lg shadow space-y-4">
+              <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-full"></div>
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -103,93 +141,189 @@ export default function CareerDetailsPage({ params }: { params: { id: string } }
 
   if (!career) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Career Not Found</h2>
-          <Link
-            href="/admin/careers"
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 inline-block"
-          >
-            Back to Careers
-          </Link>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Career Not Found</h1>
+            <Link href="/admin/careers" className="text-blue-600 hover:text-blue-800">
+              Back to Careers
+            </Link>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link
-          href="/admin/careers"
-          className="text-blue-600 hover:text-blue-800 mb-4 inline-block"
-        >
-          <- Back to Careers
-        </Link>
-
-        <div className="bg-white shadow rounded-lg p-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">{career.title}</h1>
-            <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-600">
-              <span>{career.department}</span>
-              <span></span>
-              <span>{career.location}</span>
-              <span></span>
-              <span>{career.type}</span>
-              <span></span>
-              <span>{career.experience}</span>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Job Description</h2>
-              <p className="text-gray-700">{career.description}</p>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Responsibilities</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {career.responsibilities.map((responsibility, index) => (
-                  <li key={index}>{responsibility}</li>
-                ))}
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Requirements</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {career.requirements.map((requirement, index) => (
-                  <li key={index}>{requirement}</li>
-                ))}
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-xl font-semibold text-gray-900 mb-3">Benefits</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {career.benefits.map((benefit, index) => (
-                  <li key={index}>{benefit}</li>
-                ))}
-              </ul>
-            </section>
-
-            <div className="flex gap-4 pt-6 border-t">
-              <Link
-                href={`/admin/careers/${career.id}/edit`}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Edit Position
-              </Link>
-              <Link
-                href={`/admin/careers/${career.id}/delete`}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-              >
-                Delete Position
-              </Link>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <Link href="/admin/careers" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
+            <- Back to Careers
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900">Edit Career Position</h1>
         </div>
+
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md">
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="bg-white shadow-sm rounded-lg p-6">
+          <div className="space-y-6">
+            <div>
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                Job Title *
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                  Location *
+                </label>
+                <input
+                  type="text"
+                  id="location"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
+                  Employment Type *
+                </label>
+                <select
+                  id="type"
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="FULL_TIME">Full Time</option>
+                  <option value="PART_TIME">Part Time</option>
+                  <option value="CONTRACT">Contract</option>
+                  <option value="INTERN">Internship</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="salary" className="block text-sm font-medium text-gray-700 mb-2">
+                  Salary Range
+                </label>
+                <input
+                  type="text"
+                  id="salary"
+                  name="salary"
+                  value={formData.salary}
+                  onChange={handleChange}
+                  placeholder="e.g., $50,000 - $70,000"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                  Status *
+                </label>
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                Job Description *
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="requirements" className="block text-sm font-medium text-gray-700 mb-2">
+                Requirements *
+              </label>
+              <textarea
+                id="requirements"
+                name="requirements"
+                value={formData.requirements}
+                onChange={handleChange}
+                required
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="benefits" className="block text-sm font-medium text-gray-700 mb-2">
+                Benefits & Perks
+              </label>
+              <textarea
+                id="benefits"
+                name="benefits"
+                value={formData.benefits}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-4 mt-8">
+            <Link
+              href="/admin/careers"
+              className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {saving ? 'Updating...' : 'Update Career'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

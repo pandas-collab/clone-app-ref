@@ -1,53 +1,57 @@
-import NextAuth, { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
+import NextAuth from 'next-auth'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import bcrypt from 'bcryptjs'
+import { PrismaClient } from '@prisma/client'
+import { NextAuthOptions } from 'next-auth'
 
-const authOptions: NextAuthOptions = {
+const prisma = new PrismaClient()
+
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      name: 'credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-        username: { label: "Username", type: "text" }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
         try {
-          if (!credentials?.password) {
-            throw new Error("Password required")
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error('Missing credentials')
           }
 
-          // Check email-based login (admin@example.com)
-          if (credentials.email === "admin@example.com" && credentials.password === "admin123") {
-            return {
-              id: "1",
-              email: "admin@example.com",
-              name: "Admin User",
-              role: "admin"
-            }
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
+          })
+
+          if (!user || !user.password) {
+            throw new Error('Invalid credentials')
           }
 
-          // Check username-based login (admin)
-          if (credentials.username === "admin" && credentials.password === "admin123") {
-            return {
-              id: "1",
-              name: "Admin User",
-              email: "admin@bourntec.com",
-              role: "admin"
-            }
+          const isValidPassword = await bcrypt.compare(credentials.password, user.password)
+
+          if (!isValidPassword) {
+            throw new Error('Invalid credentials')
           }
 
-          throw new Error("Invalid credentials")
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role
+          }
         } catch (error) {
-          console.error("Auth error:", error)
+          console.error('Auth error:', error)
           return null
         }
       }
     })
   ],
-  pages: {
-    signIn: "/admin/login",
-    error: "/admin/login"
+  session: {
+    strategy: 'jwt'
+  },
+  jwt: {
+    maxAge: 24 * 60 * 60
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -58,16 +62,17 @@ const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session?.user) {
+        session.user.id = token.sub as string
         session.user.role = token.role as string
-        ;(session.user as any).id = token.sub
       }
       return session
     }
   },
-  session: {
-    strategy: "jwt"
+  pages: {
+    signIn: '/admin/login',
+    error: '/admin/error'
   },
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-key"
+  secret: process.env.NEXTAUTH_SECRET
 }
 
 const handler = NextAuth(authOptions)
