@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "routes": {
+    "/": {
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/",
+      "dataRoute": null
+    }
+  },
+  "dynamicRoutes": {},
+  "notFoundRoutes": [],
+  "preview": {
+    "previewModeId": "development-id",
+    "previewModeSigningKey": "development-key",
+    "previewModeEncryptionKey": "development-encryption-key"
+  }
+}
