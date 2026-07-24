@@ -1,4 +1,5 @@
+import { NextResponse } from "next/server";
 
 export async function POST() {
-  return Response.json({ message: "Not implemented" }, { status: 501 });
+  return NextResponse.json({ message: "Not implemented" }, { status: 501 });
 }

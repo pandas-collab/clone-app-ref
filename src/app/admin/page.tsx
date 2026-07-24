@@ -1,110 +1,97 @@
 'use client';
 
-import React from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { adminUsers, dashboardMetrics, recentActivities } from '@/lib/mockData';
+
+interface DashboardStats {
+  services: number;
+  portfolio: number;
+  careers: number;
+  applications: number;
+}
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats>({
+    services: 0,
+    portfolio: 0,
+    careers: 0,
+    applications: 0,
+  });
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      // Fetch stats from various APIs
+      const [servicesRes, portfolioRes, careersRes] = await Promise.all([
+        fetch('/api/services'),
+        fetch('/api/portfolio'),
+        fetch('/api/careers'),
+      ]);
+
+      const services = servicesRes.ok ? await servicesRes.json() : [];
+      const portfolio = portfolioRes.ok ? await portfolioRes.json() : [];
+      const careers = careersRes.ok ? await careersRes.json() : [];
+
+      setStats({
+        services: Array.isArray(services) ? services.length : 0,
+        portfolio: Array.isArray(portfolio) ? portfolio.length : 0,
+        careers: Array.isArray(careers) ? careers.length : 0,
+        applications: 0, // Would need separate endpoint
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b border-gray-200 pb-4">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your site.</p>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700">Services</h3>
+          <p className="text-3xl font-bold text-blue-600">{stats.services}</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700">Portfolio Items</h3>
+          <p className="text-3xl font-bold text-green-600">{stats.portfolio}</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700">Job Openings</h3>
+          <p className="text-3xl font-bold text-purple-600">{stats.careers}</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-gray-700">Applications</h3>
+          <p className="text-3xl font-bold text-orange-600">{stats.applications}</p>
+        </div>
       </div>
 
-      {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {dashboardMetrics.map((metric) => (
-          <Card key={metric.id} className="p-6">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">{metric.label}</p>
-                <p className="text-2xl font-semibold text-gray-900">{metric.value}</p>
-                {metric.change && (
-                  <p className={`text-sm ${
-                    metric.change > 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {metric.change > 0 ? '+' : ''}{metric.change}% from {metric.period}
-                  </p>
-                )}
-              </div>
-              <div className="ml-4">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 text-sm">{metric.icon}</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+        <Link href="/admin/services" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+          <h3 className="text-lg font-semibold mb-2">Manage Services</h3>
+          <p className="text-gray-600">Create, edit, and delete services</p>
+        </Link>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/admin/services/create">
-          <Button className="w-full">
-            Create New Service
-          </Button>
+        <Link href="/admin/portfolio" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+          <h3 className="text-lg font-semibold mb-2">Manage Portfolio</h3>
+          <p className="text-gray-600">Manage portfolio items</p>
         </Link>
-        <Link href="/admin/portfolio/create">
-          <Button className="w-full" variant="outline">
-            Add Portfolio Item
-          </Button>
-        </Link>
-        <Link href="/admin/careers/create">
-          <Button className="w-full" variant="outline">
-            Post New Job
-          </Button>
-        </Link>
-        <Link href="/admin/applications">
-          <Button className="w-full" variant="outline">
-            View Applications
-          </Button>
-        </Link>
-      </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-          <div className="space-y-4">
-            {recentActivities.slice(0, 5).map((activity) => (
-              <div key={activity.id} className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">{activity.description}</p>
-                  <p className="text-xs text-gray-500">
-                    {activity.user}  {new Date(activity.timestamp).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        <Link href="/admin/careers" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+          <h3 className="text-lg font-semibold mb-2">Manage Careers</h3>
+          <p className="text-gray-600">Manage job openings</p>
+        </Link>
 
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Total Services</span>
-              <span className="text-sm font-medium">{dashboardMetrics.find(m => m.label.includes('Services'))?.value || '0'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Portfolio Items</span>
-              <span className="text-sm font-medium">{dashboardMetrics.find(m => m.label.includes('Portfolio'))?.value || '0'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Active Jobs</span>
-              <span className="text-sm font-medium">{dashboardMetrics.find(m => m.label.includes('Jobs'))?.value || '0'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Pending Applications</span>
-              <span className="text-sm font-medium">{dashboardMetrics.find(m => m.label.includes('Applications'))?.value || '0'}</span>
-            </div>
-          </div>
-        </Card>
+        <Link href="/admin/applications" className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow">
+          <h3 className="text-lg font-semibold mb-2">View Applications</h3>
+          <p className="text-gray-600">Review job applications</p>
+        </Link>
       </div>
     </div>
   );
