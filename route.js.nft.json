@@ -1,0 +1,33 @@
+{
+  "version": 3,
+  "routes": [
+    "/api/auth"
+  ],
+  "files": [
+    "../../../../../../lib/auth.js",
+    "../../../../../../lib/utils.js",
+    "../../../../../../package.json"
+  ],
+  "traced": [
+    {
+      "name": "next/server",
+      "type": "module"
+    },
+    {
+      "name": "next-auth",
+      "type": "module"
+    },
+    {
+      "name": "next-auth/providers/credentials",
+      "type": "module"
+    },
+    {
+      "name": "bcryptjs",
+      "type": "module"
+    },
+    {
+      "name": "@prisma/client",
+      "type": "module"
+    }
+  ]
+}
