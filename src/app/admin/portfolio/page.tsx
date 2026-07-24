@@ -1,4 +1,39 @@
-if (!response.ok) {
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import Sidebar from "@/components/layout/Sidebar";
+
+interface PortfolioItem {
+  id: string;
+  title: string;
+  clientName: string;
+  industry: string;
+  servicesUsed: string[];
+  status: 'published' | 'draft';
+}
+
+export default function PortfolioPage() {
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterIndustry, setFilterIndustry] = useState('');
+  const [filterService, setFilterService] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchPortfolioItems();
+  }, []);
+
+  const fetchPortfolioItems = async () => {
+    try {
+      const response = await fetch('/api/portfolio');
+      
+      if (!response.ok) {
         throw new Error('Failed to fetch portfolio items');
       }
       
@@ -279,7 +314,7 @@ if (!response.ok) {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               >
-                <option value="">All Status</option>
+                <option value="">All Statuses</option>
                 <option value="published">Published</option>
                 <option value="draft">Draft</option>
               </select>
@@ -289,178 +324,126 @@ if (!response.ok) {
 
         {/* Bulk Actions */}
         {selectedItems.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-white p-4 rounded-lg shadow mb-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="text-sm font-medium text-blue-800">
-                  {selectedItems.length} item(s) selected
-                </span>
-              </div>
+              <span className="text-sm text-gray-700">
+                {selectedItems.length} item(s) selected
+              </span>
               <div className="flex space-x-2">
-                <button
+                <Button
+                  size="sm"
                   onClick={() => handleBulkStatusUpdate('published')}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200"
+                  className="bg-green-600 hover:bg-green-700"
                 >
-                  Publish
-                </button>
-                <button
+                  Publish Selected
+                </Button>
+                <Button
+                  size="sm"
                   onClick={() => handleBulkStatusUpdate('draft')}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-yellow-700 bg-yellow-100 hover:bg-yellow-200"
+                  className="bg-yellow-600 hover:bg-yellow-700"
                 >
-                  Draft
-                </button>
-                <button
+                  Draft Selected
+                </Button>
+                <Button
+                  size="sm"
                   onClick={handleBulkDelete}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200"
+                  className="bg-red-600 hover:bg-red-700"
                 >
-                  Delete
-                </button>
+                  Delete Selected
+                </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Portfolio Items Table */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <Card>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3">
                     <input
                       type="checkbox"
                       checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
                       onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Project
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Client
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Industry
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Services
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Updated
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="text-left p-3">Title</th>
+                  <th className="text-left p-3">Client</th>
+                  <th className="text-left p-3">Industry</th>
+                  <th className="text-left p-3">Status</th>
+                  <th className="text-left p-3">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {filteredItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={item.id} className="border-b hover:bg-gray-50">
+                    <td className="p-3">
                       <input
                         type="checkbox"
                         checked={selectedItems.includes(item.id)}
                         onChange={(e) => handleSelectItem(item.id, e.target.checked)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{item.title}</div>
-                      <div className="text-sm text-gray-500">/{item.slug}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{item.clientName}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{item.industry}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-wrap gap-1">
-                        {item.servicesUsed.slice(0, 2).map((service, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
-                          >
-                            {service}
-                          </span>
-                        ))}
-                        {item.servicesUsed.length > 2 && (
-                          <span className="text-xs text-gray-500">
-                            +{item.servicesUsed.length - 2} more
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={item.status}
-                        onChange={(e) => handleStatusUpdate(item.id, e.target.value as 'published' | 'draft')}
-                        className={`text-sm rounded-full px-3 py-1 font-medium border-0 focus:ring-2 focus:ring-offset-2 ${
+                    <td className="p-3 font-medium text-gray-900">{item.title}</td>
+                    <td className="p-3 text-gray-700">{item.clientName}</td>
+                    <td className="p-3 text-gray-700">{item.industry}</td>
+                    <td className="p-3">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           item.status === 'published'
-                            ? 'bg-green-100 text-green-800 focus:ring-green-500'
-                            : 'bg-yellow-100 text-yellow-800 focus:ring-yellow-500'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
                         }`}
                       >
-                        <option value="published">Published</option>
-                        <option value="draft">Draft</option>
-                      </select>
+                        {item.status}
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(item.updatedAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Link
-                          href={`/admin/portfolio/${item.id}`}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Edit
+                    <td className="p-3">
+                      <div className="flex space-x-2">
+                        <Link href={`/admin/portfolio/${item.id}`}>
+                          <Button size="sm">Edit</Button>
                         </Link>
-                        <button
+                        <Button
+                          size="sm"
+                          onClick={() => handleStatusUpdate(
+                            item.id,
+                            item.status === 'published' ? 'draft' : 'published'
+                          )}
+                          className={item.status === 'published' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'}
+                        >
+                          {item.status === 'published' ? 'Unpublish' : 'Publish'}
+                        </Button>
+                        <Button
+                          size="sm"
                           onClick={() => handleDelete(item.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="bg-red-600 hover:bg-red-700"
                         >
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
                 ))}
+                {filteredItems.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-gray-500">
+                      No portfolio items found. {portfolioItems.length === 0 ? (
+                        <Link href="/admin/portfolio/create" className="text-blue-600 hover:text-blue-800">
+                          Create your first portfolio item
+                        </Link>
+                      ) : (
+                        'Try adjusting your filters.'
+                      )}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-        </div>
-
-        {filteredItems.length === 0 && (
-          <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No portfolio items found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || filterIndustry || filterService || filterStatus
-                ? 'Try adjusting your search or filter criteria.'
-                : 'Get started by creating your first portfolio item.'}
-            </p>
-            {!searchTerm && !filterIndustry && !filterService && !filterStatus && (
-              <div className="mt-6">
-                <Link
-                  href="/admin/portfolio/create"
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <svg className="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Create Portfolio Item
-                </Link>
-              </div>
-            )}
-          </div>
-        )}
+        </Card>
       </div>
     </div>
   );

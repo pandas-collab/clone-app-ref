@@ -1,4 +1,41 @@
-if (!response.ok) {
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { PortfolioForm } from '@/components/forms/PortfolioForm';
+
+export default function CreatePortfolioPage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  const initialData = {
+    title: '',
+    description: '',
+    client: '',
+    technologies: [],
+    status: 'draft' as const,
+    featured: false,
+    projectUrl: '',
+    repositoryUrl: '',
+    completedAt: null,
+    images: []
+  };
+
+  const handleSubmit = async (data: any, saveAndContinue = false) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/admin/portfolio', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create portfolio item');
       }

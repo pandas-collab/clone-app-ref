@@ -1,4 +1,83 @@
-if (formData.title && !portfolioId) {
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Card } from '@/components/ui/Card';
+
+interface PortfolioFormData {
+  title: string;
+  slug: string;
+  clientName: string;
+  clientLogo: string;
+  industry: string;
+  servicesUsed: string[];
+  challenge: string;
+  solution: string;
+  results: string;
+  metrics: Array<{ label: string; value: string }>;
+  testimonial: string;
+  status: 'draft' | 'published';
+}
+
+interface PortfolioFormProps {
+  portfolioId?: string;
+  initialData?: Partial<PortfolioFormData>;
+  onSubmit?: (data: PortfolioFormData) => Promise<void>;
+}
+
+const industries = [
+  'Technology',
+  'Healthcare',
+  'Finance',
+  'E-commerce',
+  'Manufacturing',
+  'Education',
+  'Real Estate',
+  'Non-profit',
+  'Government',
+  'Other'
+];
+
+const availableServices = [
+  'Web Development',
+  'Mobile App Development',
+  'UI/UX Design',
+  'Digital Marketing',
+  'SEO Optimization',
+  'Content Marketing',
+  'Social Media Marketing',
+  'Brand Strategy',
+  'Consulting'
+];
+
+export function PortfolioForm({ portfolioId, initialData, onSubmit }: PortfolioFormProps) {
+  const router = useRouter();
+  const [formData, setFormData] = useState<PortfolioFormData>({
+    title: '',
+    slug: '',
+    clientName: '',
+    clientLogo: '',
+    industry: '',
+    servicesUsed: [],
+    challenge: '',
+    solution: '',
+    results: '',
+    metrics: [{ label: '', value: '' }],
+    testimonial: '',
+    status: 'draft',
+    ...initialData
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  // Auto-generate slug from title
+  useEffect(() => {
+    if (formData.title && !portfolioId) {
       const slug = formData.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -293,10 +372,16 @@ if (formData.title && !portfolioId) {
                   id="clientLogo"
                   accept="image/*"
                   onChange={handleLogoUpload}
-                  disabled={uploadingLogo}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="hidden"
                 />
-                {uploadingLogo && <p className="text-sm text-gray-500 mt-1">Uploading...</p>}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('clientLogo')?.click()}
+                  disabled={uploadingLogo}
+                >
+                  {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                </Button>
               </div>
             </div>
             {errors.clientLogo && <p className="mt-1 text-sm text-red-600">{errors.clientLogo}</p>}
@@ -306,20 +391,20 @@ if (formData.title && !portfolioId) {
         {/* Services Used */}
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Services Used *</h3>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {availableServices.map((service) => (
               <label key={service} className="flex items-center">
                 <input
                   type="checkbox"
                   checked={formData.servicesUsed.includes(service)}
                   onChange={() => handleServiceToggle(service)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                 />
                 <span className="ml-2 text-sm text-gray-700">{service}</span>
               </label>
             ))}
           </div>
-          {errors.servicesUsed && <p className="mt-2 text-sm text-red-600">{errors.servicesUsed}</p>}
+          {errors.servicesUsed && <p className="mt-1 text-sm text-red-600">{errors.servicesUsed}</p>}
         </div>
 
         {/* Project Details */}
@@ -338,7 +423,7 @@ if (formData.title && !portfolioId) {
                 className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                   errors.challenge ? 'border-red-300' : ''
                 }`}
-                placeholder="Describe the challenge or problem that needed to be solved"
+                placeholder="Describe the client's challenge..."
               />
               {errors.challenge && <p className="mt-1 text-sm text-red-600">{errors.challenge}</p>}
             </div>
@@ -355,7 +440,7 @@ if (formData.title && !portfolioId) {
                 className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                   errors.solution ? 'border-red-300' : ''
                 }`}
-                placeholder="Describe the solution approach and implementation"
+                placeholder="Describe the solution provided..."
               />
               {errors.solution && <p className="mt-1 text-sm text-red-600">{errors.solution}</p>}
             </div>
@@ -372,7 +457,7 @@ if (formData.title && !portfolioId) {
                 className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
                   errors.results ? 'border-red-300' : ''
                 }`}
-                placeholder="Describe the outcomes and impact of the project"
+                placeholder="Describe the results achieved..."
               />
               {errors.results && <p className="mt-1 text-sm text-red-600">{errors.results}</p>}
             </div>
@@ -381,47 +466,48 @@ if (formData.title && !portfolioId) {
 
         {/* Metrics */}
         <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Project Metrics</h3>
-            <button
-              type="button"
-              onClick={addMetric}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Key Metrics</h3>
+            <Button type="button" variant="outline" onClick={addMetric}>
               Add Metric
-            </button>
+            </Button>
           </div>
           <div className="space-y-4">
             {formData.metrics.map((metric, index) => (
-              <div key={index} className="flex items-center space-x-4">
+              <div key={index} className="flex gap-4 items-end">
                 <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Metric Label
+                  </label>
                   <input
                     type="text"
                     value={metric.label}
                     onChange={(e) => handleMetricChange(index, 'label', e.target.value)}
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Metric label (e.g., Performance Increase)"
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="e.g., Increase in Sales"
                   />
                 </div>
                 <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Value
+                  </label>
                   <input
                     type="text"
                     value={metric.value}
                     onChange={(e) => handleMetricChange(index, 'value', e.target.value)}
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Value (e.g., 40%)"
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="e.g., 150%"
                   />
                 </div>
                 {formData.metrics.length > 1 && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={() => removeMetric(index)}
-                    className="inline-flex items-center p-2 border border-transparent rounded-full text-red-400 hover:text-red-600"
+                    className="text-red-600 hover:text-red-700"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                    Remove
+                  </Button>
                 )}
               </div>
             ))}
@@ -431,71 +517,64 @@ if (formData.title && !portfolioId) {
         {/* Testimonial */}
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Client Testimonial</h3>
-          <textarea
-            id="testimonial"
-            rows={4}
-            value={formData.testimonial}
-            onChange={(e) => handleInputChange('testimonial', e.target.value)}
-            className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            placeholder="Client feedback or testimonial about the project"
-          />
+          <div>
+            <label htmlFor="testimonial" className="block text-sm font-medium text-gray-700">
+              Testimonial
+            </label>
+            <textarea
+              id="testimonial"
+              rows={4}
+              value={formData.testimonial}
+              onChange={(e) => handleInputChange('testimonial', e.target.value)}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="Client testimonial (optional)..."
+            />
+          </div>
         </div>
 
         {/* Status */}
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Publication Status</h3>
-          <div className="flex items-center space-x-6">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="status"
-                value="draft"
-                checked={formData.status === 'draft'}
-                onChange={(e) => handleInputChange('status', e.target.value as 'draft' | 'published')}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-              />
-              <span className="ml-2 text-sm text-gray-700">Draft</span>
+          <div>
+            <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+              Status
             </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="status"
-                value="published"
-                checked={formData.status === 'published'}
-                onChange={(e) => handleInputChange('status', e.target.value as 'draft' | 'published')}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-              />
-              <span className="ml-2 text-sm text-gray-700">Published</span>
-            </label>
+            <select
+              id="status"
+              value={formData.status}
+              onChange={(e) => handleInputChange('status', e.target.value as 'draft' | 'published')}
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+            </select>
           </div>
         </div>
 
         {/* Form Actions */}
-        <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-          <button
+        <div className="flex gap-4 justify-end">
+          <Button
             type="button"
-            onClick={() => router.back()}
-            className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            variant="outline"
+            onClick={() => router.push('/admin/portfolio')}
+            disabled={isLoading}
           >
             Cancel
-          </button>
-          <div className="flex items-center space-x-4">
-            <button
-              type="button"
-              onClick={(e) => handleSubmit(e, true)}
-              disabled={isLoading}
-              className="bg-gray-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Saving...' : 'Save & Continue'}
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Saving...' : portfolioId ? 'Update Portfolio Item' : 'Create Portfolio Item'}
-            </button>
-          </div>
+          </Button>
+          <Button
+            type="submit"
+            variant="outline"
+            onClick={(e) => handleSubmit(e, true)}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : 'Save & Continue'}
+          </Button>
+          <Button
+            type="submit"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : portfolioId ? 'Update' : 'Create'}
+          </Button>
         </div>
       </form>
     </div>

@@ -1,4 +1,55 @@
-if (formData.title && !serviceId) {
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+interface ServiceFormProps {
+  serviceId?: string;
+  onSubmit?: (data: any) => Promise<void>;
+  onCancel?: () => void;
+  initialData?: any;
+}
+
+interface FormErrors {
+  [key: string]: string;
+}
+
+const categories = [
+  'Web Development',
+  'Mobile Development',
+  'UI/UX Design',
+  'Digital Marketing',
+  'SEO Services',
+  'Content Creation',
+  'Consulting',
+  'Other'
+];
+
+export function ServiceForm({ serviceId, onSubmit, onCancel, initialData }: ServiceFormProps) {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    title: '',
+    slug: '',
+    description: '',
+    longDescription: '',
+    category: '',
+    keyFeatures: [''],
+    benefits: [''],
+    metaTitle: '',
+    metaDescription: '',
+    featuredImage: '',
+    status: 'draft' as 'draft' | 'published',
+    ...initialData
+  });
+
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Auto-generate slug from title
+  useEffect(() => {
+    if (formData.title && !serviceId) {
       const slug = formData.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -57,6 +108,14 @@ if (formData.title && !serviceId) {
       [fieldName]: prev[fieldName].filter((_, i) => i !== index)
     }));
   };
+
+  // Legacy method names for backward compatibility
+  const addFeature = () => addArrayField('keyFeatures');
+  const removeFeature = (index: number) => removeArrayField('keyFeatures', index);
+  const updateFeature = (index: number, value: string) => handleArrayFieldChange('keyFeatures', index, value);
+  const addBenefit = () => addArrayField('benefits');
+  const removeBenefit = (index: number) => removeArrayField('benefits', index);
+  const updateBenefit = (index: number, value: string) => handleArrayFieldChange('benefits', index, value);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -314,7 +373,7 @@ if (formData.title && !serviceId) {
               name="longDescription"
               value={formData.longDescription}
               onChange={handleInputChange}
-              rows={8}
+              rows={6}
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.longDescription ? 'border-red-300' : 'border-gray-300'
               }`}
@@ -323,83 +382,77 @@ if (formData.title && !serviceId) {
             <p className="mt-1 text-sm text-gray-500">{formData.longDescription.length} characters</p>
             {errors.longDescription && <p className="mt-1 text-sm text-red-600">{errors.longDescription}</p>}
           </div>
-        </div>
-      </div>
 
-      {/* Key Features */}
-      <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-medium text-gray-900">Key Features</h3>
-          <button
-            type="button"
-            onClick={() => addArrayField('keyFeatures')}
-            className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            + Add Feature
-          </button>
-        </div>
-        
-        <div className="space-y-3">
-          {formData.keyFeatures.map((feature, index) => (
-            <div key={index} className="flex gap-2">
-              <input
-                type="text"
-                value={feature}
-                onChange={(e) => handleArrayFieldChange('keyFeatures', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder={`Feature ${index + 1}`}
-              />
-              {formData.keyFeatures.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeArrayField('keyFeatures', index)}
-                  className="px-3 py-2 text-red-600 hover:text-red-800 focus:outline-none"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-        {errors.keyFeatures && <p className="mt-2 text-sm text-red-600">{errors.keyFeatures}</p>}
-      </div>
+          {/* Key Features */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Key Features *
+            </label>
+            {formData.keyFeatures.map((feature, index) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={feature}
+                  onChange={(e) => handleArrayFieldChange('keyFeatures', index, e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter key feature"
+                />
+                {formData.keyFeatures.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeArrayField('keyFeatures', index)}
+                    className="px-3 py-2 text-red-600 hover:text-red-800"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => addArrayField('keyFeatures')}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              + Add Feature
+            </button>
+            {errors.keyFeatures && <p className="mt-1 text-sm text-red-600">{errors.keyFeatures}</p>}
+          </div>
 
-      {/* Benefits */}
-      <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-medium text-gray-900">Benefits</h3>
-          <button
-            type="button"
-            onClick={() => addArrayField('benefits')}
-            className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            + Add Benefit
-          </button>
+          {/* Benefits */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Benefits *
+            </label>
+            {formData.benefits.map((benefit, index) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={benefit}
+                  onChange={(e) => handleArrayFieldChange('benefits', index, e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter benefit"
+                />
+                {formData.benefits.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeArrayField('benefits', index)}
+                    className="px-3 py-2 text-red-600 hover:text-red-800"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => addArrayField('benefits')}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              + Add Benefit
+            </button>
+            {errors.benefits && <p className="mt-1 text-sm text-red-600">{errors.benefits}</p>}
+          </div>
         </div>
-        
-        <div className="space-y-3">
-          {formData.benefits.map((benefit, index) => (
-            <div key={index} className="flex gap-2">
-              <input
-                type="text"
-                value={benefit}
-                onChange={(e) => handleArrayFieldChange('benefits', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder={`Benefit ${index + 1}`}
-              />
-              {formData.benefits.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeArrayField('benefits', index)}
-                  className="px-3 py-2 text-red-600 hover:text-red-800 focus:outline-none"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-        {errors.benefits && <p className="mt-2 text-sm text-red-600">{errors.benefits}</p>}
       </div>
 
       {/* Featured Image */}
@@ -407,39 +460,31 @@ if (formData.title && !serviceId) {
         <h3 className="text-lg font-medium text-gray-900 mb-6">Featured Image</h3>
         
         <div className="space-y-4">
+          {imagePreview && (
+            <div className="relative">
+              <img
+                src={imagePreview}
+                alt="Featured image preview"
+                className="w-full max-w-md h-48 object-cover rounded-md border border-gray-300"
+              />
+            </div>
+          )}
+
           <div>
-            <label htmlFor="featuredImage" className="block text-sm font-medium text-gray-700 mb-2">
-              Upload Image
-            </label>
             <input
               type="file"
-              id="featuredImage"
               accept="image/*"
               onChange={handleImageUpload}
               disabled={uploadingImage}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
-            {uploadingImage && <p className="mt-1 text-sm text-blue-600">Uploading...</p>}
+            {uploadingImage && <p className="mt-2 text-sm text-blue-600">Uploading...</p>}
             {errors.featuredImage && <p className="mt-1 text-sm text-red-600">{errors.featuredImage}</p>}
           </div>
-
-          {imagePreview && (
-            <div className="mt-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
-              <div className="relative w-48 h-32">
-                <Image
-                  src={imagePreview}
-                  alt="Featured image preview"
-                  fill
-                  className="object-cover rounded-lg"
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* SEO */}
+      {/* SEO Settings */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-6">SEO Settings</h3>
         
@@ -475,7 +520,7 @@ if (formData.title && !serviceId) {
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 errors.metaDescription ? 'border-red-300' : 'border-gray-300'
               }`}
-              placeholder="SEO description for search engines (max 160 characters)"
+              placeholder="SEO description for search results (max 160 characters)"
             />
             <p className="mt-1 text-sm text-gray-500">{formData.metaDescription.length}/160 characters</p>
             {errors.metaDescription && <p className="mt-1 text-sm text-red-600">{errors.metaDescription}</p>}
@@ -485,11 +530,11 @@ if (formData.title && !serviceId) {
 
       {/* Status */}
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-6">Publishing</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-6">Status</h3>
         
         <div>
           <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-            Status
+            Publication Status
           </label>
           <select
             id="status"
@@ -511,13 +556,13 @@ if (formData.title && !serviceId) {
             <p className="text-sm text-red-600">{errors.submit}</p>
           </div>
         )}
-        
-        <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+
+        <div className="flex gap-4 justify-end">
           <button
             type="button"
             onClick={handleCancel}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isSubmitting}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -525,16 +570,16 @@ if (formData.title && !serviceId) {
           <button
             type="button"
             onClick={(e) => handleSubmit(e, true)}
+            className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-300 rounded-md shadow-sm hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isSubmitting}
-            className="px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
             {isSubmitting ? 'Saving...' : 'Save & Continue'}
           </button>
           
           <button
             type="submit"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={isSubmitting}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           >
             {isSubmitting ? 'Saving...' : (serviceId ? 'Update Service' : 'Create Service')}
           </button>
@@ -542,6 +587,4 @@ if (formData.title && !serviceId) {
       </div>
     </form>
   );
-};
-
-export default ServiceForm;
+}

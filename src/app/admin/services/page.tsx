@@ -1,4 +1,38 @@
-if (!response.ok) {
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Sidebar from "@/components/layout/Sidebar";
+
+interface Service {
+  id: string;
+  title: string;
+  category: string;
+  status: 'published' | 'draft';
+}
+
+export default function ServicesPage() {
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  const categories = ['Development', 'Design', 'Consulting', 'Marketing', 'Support'];
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const fetchServices = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/services');
+      
+      if (!response.ok) {
         throw new Error('Failed to fetch services');
       }
       const data = await response.json();
@@ -241,114 +275,91 @@ if (!response.ok) {
             </div>
           </div>
 
-          {filteredServices.length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No services found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {searchTerm || filterCategory !== 'all' || filterStatus !== 'all'
-                  ? 'Try adjusting your search or filters'
-                  : 'Get started by creating your first service'
-                }
-              </p>
-              {!searchTerm && filterCategory === 'all' && filterStatus === 'all' && (
-                <div className="mt-6">
-                  <Link
-                    href="/admin/services/create"
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Create Service
-                  </Link>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3">
+                    <input 
+                      type="checkbox" 
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      checked={selectedServices.length === filteredServices.length && filteredServices.length > 0}
+                    />
+                  </th>
+                  <th className="text-left p-3">Title</th>
+                  <th className="text-left p-3">Category</th>
+                  <th className="text-left p-3">Status</th>
+                  <th className="text-left p-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredServices.length === 0 ? (
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Service
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Updated
-                    </th>
-                    <th className="relative px-6 py-3">
-                      <span className="sr-only">Actions</span>
-                    </th>
+                    <td colSpan={5} className="text-center py-12">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">No services found</h3>
+                      <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredServices.map((service) => (
-                    <tr key={service.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedServices.includes(service.id)}
-                            onChange={(e) => handleSelectService(service.id, e.target.checked)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
-                          />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {service.title}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              /{service.slug}
-                            </div>
-                          </div>
-                        </div>
+                ) : (
+                  filteredServices.map((service) => (
+                    <tr key={service.id} className="border-b hover:bg-gray-50">
+                      <td className="p-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedServices.includes(service.id)}
+                          onChange={(e) => handleSelectService(service.id, e.target.checked)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {service.category}
+                      <td className="p-3 font-medium text-gray-900">{service.title}</td>
+                      <td className="p-3 text-gray-500">{service.category}</td>
+                      <td className="p-3">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          service.status === 'published' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {service.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={service.status}
-                          onChange={(e) => handleStatusUpdate(service.id, e.target.value as 'published' | 'draft')}
-                          className={`text-xs font-medium rounded-full px-2.5 py-0.5 border-0 focus:ring-2 focus:ring-blue-500 ${
-                            service.status === 'published'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          <option value="draft">Draft</option>
-                          <option value="published">Published</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(service.updatedAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        <Link
-                          href={`/admin/services/${service.id}`}
-                          className="text-blue-600 hover:text-blue-900 font-medium"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => setDeleteConfirm(service.id)}
-                          className="text-red-600 hover:text-red-900 font-medium"
-                        >
-                          Delete
-                        </button>
+                      <td className="p-3">
+                        <div className="flex items-center space-x-2">
+                          <Link
+                            href={`/admin/services/${service.id}`}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            onClick={() => handleStatusUpdate(
+                              service.id, 
+                              service.status === 'published' ? 'draft' : 'published'
+                            )}
+                            className={`px-3 py-1 rounded text-sm font-medium transition-colors duration-200 ${
+                              service.status === 'published'
+                                ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                                : 'bg-green-600 hover:bg-green-700 text-white'
+                            }`}
+                          >
+                            {service.status === 'published' ? 'Unpublish' : 'Publish'}
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(service.id)}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Delete Confirmation Modal */}
@@ -356,29 +367,24 @@ if (!response.ok) {
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
               <div className="mt-3 text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                  <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mt-4">Delete Service</h3>
+                <h3 className="text-lg leading-6 font-medium text-gray-900">Delete Service</h3>
                 <div className="mt-2 px-7 py-3">
                   <p className="text-sm text-gray-500">
                     Are you sure you want to delete this service? This action cannot be undone.
                   </p>
                 </div>
-                <div className="flex items-center justify-center space-x-4 mt-4">
-                  <button
-                    onClick={() => setDeleteConfirm(null)}
-                    className="px-4 py-2 bg-gray-300 text-gray-800 text-sm font-medium rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                  >
-                    Cancel
-                  </button>
+                <div className="items-center px-4 py-3">
                   <button
                     onClick={() => handleDelete(deleteConfirm)}
-                    className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-24 mr-3 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
                   >
                     Delete
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(null)}
+                    className="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  >
+                    Cancel
                   </button>
                 </div>
               </div>
