@@ -9,7 +9,7 @@ interface Service {
   title: string;
   category: string;
   status: 'published' | 'draft';
-}
+  }
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -34,31 +34,31 @@ export default function ServicesPage() {
       
       if (!response.ok) {
         throw new Error('Failed to fetch services');
-      }
+  }
       const data = await response.json();
       setServices(data);
-    } catch (err) {
+  } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load services');
-    } finally {
+  } finally {
       setLoading(false);
-    }
+  }
   };
 
   const handleDelete = async (id: string) => {
     try {
       const response = await fetch(`/api/services/${id}`, {
         method: 'DELETE',
-      });
+  });
 
       if (!response.ok) {
         throw new Error('Failed to delete service');
-      }
+  }
 
       setServices(services.filter(service => service.id !== id));
       setDeleteConfirm(null);
-    } catch (err) {
+  } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete service');
-    }
+  }
   };
 
   const handleBulkDelete = async () => {
@@ -74,13 +74,13 @@ export default function ServicesPage() {
 
       if (failedDeletes.length > 0) {
         throw new Error(`Failed to delete ${failedDeletes.length} services`);
-      }
+  }
 
       setServices(services.filter(service => !selectedServices.includes(service.id)));
       setSelectedServices([]);
-    } catch (err) {
+  } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete selected services');
-    }
+  }
   };
 
   const handleStatusUpdate = async (id: string, status: 'published' | 'draft') => {
@@ -89,21 +89,21 @@ export default function ServicesPage() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-        },
+  },
         body: JSON.stringify({ status }),
-      });
+  });
 
       if (!response.ok) {
         throw new Error('Failed to update service status');
-      }
+  }
 
       const updatedService = await response.json();
       setServices(services.map(service =>
         service.id === id ? { ...service, status: updatedService.status } : service
       ));
-    } catch (err) {
+  } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update service status');
-    }
+  }
   };
 
   const filteredServices = services.filter(service => {
@@ -118,17 +118,17 @@ export default function ServicesPage() {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedServices(filteredServices.map(service => service.id));
-    } else {
+  } else {
       setSelectedServices([]);
-    }
+  }
   };
 
   const handleSelectService = (id: string, checked: boolean) => {
     if (checked) {
       setSelectedServices([...selectedServices, id]);
-    } else {
+  } else {
       setSelectedServices(selectedServices.filter(serviceId => serviceId !== id));
-    }
+  }
   };
 
   if (loading) {
@@ -345,7 +345,7 @@ export default function ServicesPage() {
                             service.status === 'published'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-yellow-100 text-yellow-800'
-                          }`}
+  }`}
                         >
                           <option value="published">Published</option>
                           <option value="draft">Draft</option>
@@ -414,4 +414,4 @@ export default function ServicesPage() {
       </div>
     </div>
   );
-}
+  }

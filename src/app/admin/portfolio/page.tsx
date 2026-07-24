@@ -13,7 +13,7 @@ interface PortfolioItem {
   industry: string;
   servicesUsed: string[];
   status: 'published' | 'draft';
-}
+  }
 
 export default function PortfolioPage() {
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
@@ -35,15 +35,15 @@ export default function PortfolioPage() {
       
       if (!response.ok) {
         throw new Error('Failed to fetch portfolio items');
-      }
+  }
       
       const data = await response.json();
       setPortfolioItems(data);
-    } catch (err) {
+  } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load portfolio items');
-    } finally {
+  } finally {
       setLoading(false);
-    }
+  }
   };
 
   const handleStatusUpdate = async (id: string, newStatus: 'published' | 'draft') => {
@@ -52,29 +52,29 @@ export default function PortfolioPage() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-        },
+  },
         body: JSON.stringify({ status: newStatus }),
-      });
+  });
 
       if (!response.ok) {
         throw new Error('Failed to update status');
-      }
+  }
 
       setPortfolioItems(prevItems =>
         prevItems.map(item =>
           item.id === id ? { ...item, status: newStatus } : item
         )
       );
-    } catch (err) {
+  } catch (err) {
       alert('Failed to update status: ' + (err instanceof Error ? err.message : 'Unknown error'));
-    }
+  }
   };
 
   const handleBulkStatusUpdate = async (status: 'published' | 'draft') => {
     if (selectedItems.length === 0) {
       alert('Please select items to update');
       return;
-    }
+  }
 
     try {
       const promises = selectedItems.map(id =>
@@ -82,9 +82,9 @@ export default function PortfolioPage() {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-          },
+  },
           body: JSON.stringify({ status }),
-        })
+  })
       );
 
       await Promise.all(promises);
@@ -96,46 +96,46 @@ export default function PortfolioPage() {
       );
       
       setSelectedItems([]);
-    } catch (err) {
+  } catch (err) {
       alert('Failed to update items: ' + (err instanceof Error ? err.message : 'Unknown error'));
-    }
+  }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this portfolio item?')) {
       return;
-    }
+  }
 
     try {
       const response = await fetch(`/api/portfolio/${id}`, {
         method: 'DELETE',
-      });
+  });
 
       if (!response.ok) {
         throw new Error('Failed to delete portfolio item');
-      }
+  }
 
       setPortfolioItems(prevItems => prevItems.filter(item => item.id !== id));
-    } catch (err) {
+  } catch (err) {
       alert('Failed to delete item: ' + (err instanceof Error ? err.message : 'Unknown error'));
-    }
+  }
   };
 
   const handleBulkDelete = async () => {
     if (selectedItems.length === 0) {
       alert('Please select items to delete');
       return;
-    }
+  }
 
     if (!confirm(`Are you sure you want to delete ${selectedItems.length} portfolio item(s)?`)) {
       return;
-    }
+  }
 
     try {
       const promises = selectedItems.map(id =>
         fetch(`/api/portfolio/${id}`, {
           method: 'DELETE',
-        })
+  })
       );
 
       await Promise.all(promises);
@@ -145,25 +145,25 @@ export default function PortfolioPage() {
       );
       
       setSelectedItems([]);
-    } catch (err) {
+  } catch (err) {
       alert('Failed to delete items: ' + (err instanceof Error ? err.message : 'Unknown error'));
-    }
+  }
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedItems(filteredItems.map(item => item.id));
-    } else {
+  } else {
       setSelectedItems([]);
-    }
+  }
   };
 
   const handleSelectItem = (id: string, checked: boolean) => {
     if (checked) {
       setSelectedItems(prev => [...prev, id]);
-    } else {
+  } else {
       setSelectedItems(prev => prev.filter(itemId => itemId !== id));
-    }
+  }
   };
 
   const filteredItems = portfolioItems.filter(item => {
@@ -425,7 +425,7 @@ export default function PortfolioPage() {
                               item.status === 'published' 
                                 ? 'bg-green-100 text-green-800' 
                                 : 'bg-yellow-100 text-yellow-800'
-                            }`}>
+  }`}>
                               {item.status}
                             </span>
                             <div className="flex space-x-1">
@@ -463,4 +463,4 @@ export default function PortfolioPage() {
       </div>
     </div>
   );
-}
+  }

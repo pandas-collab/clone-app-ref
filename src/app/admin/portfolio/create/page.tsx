@@ -1,144 +1,82 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PortfolioForm } from '@/components/forms/PortfolioForm';
 
 export default function CreatePortfolioPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  const initialData = {
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
-    client: '',
-    technologies: [],
-    status: 'draft' as const,
-    featured: false,
+    imageUrl: '',
     projectUrl: '',
-    repositoryUrl: '',
-    completedAt: null,
-    images: []
-  };
+    technologies: '',
+    category: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = async (data: any, saveAndContinue = false) => {
-    setIsLoading(true);
-    setError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/admin/portfolio', {
+      const response = await fetch('/api/portfolio', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create portfolio item');
-      }
-
-      const result = await response.json();
-
-      if (saveAndContinue) {
-        // Stay on the form but redirect to edit mode
-        router.push(`/admin/portfolio/${result.id}`);
-      } else {
-        // Return to portfolio list
+      if (response.ok) {
         router.push('/admin/portfolio');
       }
-    } catch (err) {
-      console.error('Error creating portfolio item:', err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+    } catch (error) {
+      console.error('Failed to create portfolio item:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    router.push('/admin/portfolio');
-  };
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumbs */}
-      <nav className="mb-8">
-        <ol className="flex items-center space-x-2 text-sm text-gray-600">
-          <li>
-            <button
-              onClick={() => router.push('/admin')}
-              className="hover:text-blue-600 transition-colors"
-            >
-              Admin
-            </button>
-          </li>
-          <li className="before:content-['/'] before:mx-2">
-            <button
-              onClick={() => router.push('/admin/portfolio')}
-              className="hover:text-blue-600 transition-colors"
-            >
-              Portfolio
-            </button>
-          </li>
-          <li className="before:content-['/'] before:mx-2 text-gray-900">
-            Create New
-          </li>
-        </ol>
-      </nav>
+    <div className="max-w-2xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">Create Portfolio Item</h1>
 
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Create New Portfolio Item
-        </h1>
-        <p className="text-gray-600">
-          Add a new case study to showcase your work and client success stories.
-        </p>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">
-                Error creating portfolio item
-              </h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Form Card */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6">
-          <PortfolioForm
-            initialData={initialData}
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            isLoading={isLoading}
-            mode="create"
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Title
+          </label>
+          <input
+            type="text"
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            value={formData.title}
+            onChange={(e) => setFormData({...formData, title: e.target.value})}
           />
         </div>
-      </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea
+            required
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            value={formData.description}
+            onChange={(e) => setFormData({...formData, description: e.target.value})}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? 'Creating...' : 'Create Portfolio Item'}
+        </button>
+      </form>
     </div>
   );
 }

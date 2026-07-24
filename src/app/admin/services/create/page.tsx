@@ -20,29 +20,29 @@ export default function CreateServicePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        },
+  },
         body: JSON.stringify(formData),
-      });
+  });
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to create service');
-      }
+  }
 
       const result = await response.json();
       
       // Redirect to services list or the created service
       if (formData.action === 'save_continue') {
         router.push(`/admin/services/${result.id}`);
-      } else {
+  } else {
         router.push('/admin/services');
-      }
-    } catch (err) {
+  }
+  } catch (err) {
       console.error('Error creating service:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
+  } finally {
       setIsSubmitting(false);
-    }
+  }
   };
 
   const handleCancel = () => {
@@ -116,4 +116,4 @@ export default function CreateServicePage() {
       </div>
     </div>
   );
-}
+  }
